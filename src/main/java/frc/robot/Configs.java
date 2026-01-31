@@ -59,4 +59,9 @@ public final class Configs {
                     .positionWrappingInputRange(0, turningFactor);
         }
     }
+    public static final class Intake {
+                public static final SparkMaxConfig intakeConfig = new SparkMaxConfig();
+        static{
+        intakeConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(20).voltageCompensation(10);
+    }}
 }
