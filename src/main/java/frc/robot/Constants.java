@@ -83,7 +83,7 @@ public final class Constants {
   public static final class IntakeConstants {
     public static final int frontIntakecanid = 21;
     public static final int backIntakecanid = 22;
-    public static final double intakeSpeed = 0.5;
+    public static final double intakeSpeed = 0.9;
   }
 
   public static final class AutoConstants {
