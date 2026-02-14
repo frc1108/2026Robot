@@ -8,6 +8,8 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -17,6 +19,8 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import frc.robot.Constants.DriveConstants;
@@ -52,7 +56,7 @@ public class DriveSubsystem extends SubsystemBase {
   
 
   // Odometry class for tracking robot pose
-  SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
+  SwerveDrivePoseEstimator m_odometry = new SwerveDrivePoseEstimator(
       DriveConstants.kDriveKinematics,
       m_gyro.getRotation2d(),
       //Rotation2d.fromDegrees(m_gyro.getAngle(IMUAxis.kZ)),
@@ -61,7 +65,12 @@ public class DriveSubsystem extends SubsystemBase {
           m_frontRight.getPosition(),
           m_rearLeft.getPosition(),
           m_rearRight.getPosition()
-      });
+      },
+      new Pose2d());
+
+      private final Field2d m_field = new Field2d();
+      private boolean isVisionAdded = true;
+      private boolean m_visionAdded = false;
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
@@ -89,7 +98,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The pose.
    */
   public Pose2d getPose() {
-    return m_odometry.getPoseMeters();
+    return m_odometry.getEstimatedPosition();
   }
 
   /**
@@ -108,6 +117,30 @@ public class DriveSubsystem extends SubsystemBase {
             m_rearRight.getPosition()
         },
         pose);
+  }
+
+
+  public void visionPose(Pose2d pose,double timestamp){
+    if (isVisionAdded) {
+      m_odometry.addVisionMeasurement(pose, timestamp);
+      m_visionAdded = true;
+    }
+  }
+
+  public void stopVisionPose(){
+    isVisionAdded = false;
+  }
+
+  public void startVisionPose(){
+    isVisionAdded = true;
+  }
+
+  public boolean getVisionAdded(){
+    return isVisionAdded;
+  }
+
+  private void setVisionDevs(double xMeters, double yMeters, double thetaRads) {
+    m_odometry.setVisionMeasurementStdDevs(VecBuilder.fill(xMeters,yMeters,thetaRads));
   }
 
   /**
