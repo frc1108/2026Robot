@@ -35,18 +35,23 @@ public class IntakeSubsystem extends SubsystemBase {
   @Override
   public void periodic() {}
     // This method will be called once per scheduler run
-private void setIntakePower(double Power) {
-m_backIntake.set(Power);
+private void setFrontIntakePower(double Power) {
 m_frontIntake.set(Power);
+
+}
+private void setBackIntakePower(double Power) {
+m_backIntake.set(Power);
 
 }
 public Command intake() {
   return this.startEnd(
     () -> {
-      this.setIntakePower(IntakeConstants.intakeSpeed);
+      this.setFrontIntakePower(IntakeConstants.frontIntakeSpeed);
+      this.setBackIntakePower(IntakeConstants.backIntakeSpeed);
     },
     () -> {
-      this.setIntakePower(0.0);
+      this.setFrontIntakePower(0.0);
+      this.setBackIntakePower(0.0);
     });
 }
   

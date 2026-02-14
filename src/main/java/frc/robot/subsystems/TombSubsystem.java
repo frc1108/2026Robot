@@ -35,18 +35,25 @@ public class TombSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run
   }
 
-  private void setTombPower(double power) {
-    m_backTomb.set(power);
+  private void setFrontTombPower(double power) {
+    
     m_frontTomb.set(power);
+  }
+  private void setBackTombPower(double power) {
+    m_backTomb.set(power);
+
   }
 
   public Command tomb() {
     return this.startEnd(
         () -> {
-          this.setTombPower(TombConstants.tombSpeed);
+          this.setFrontTombPower(TombConstants.frontTombSpeed);
+          this.setBackTombPower(TombConstants.backTombSpeed);
+            
         },
         () -> {
-          this.setTombPower(0.0);
+          this.setFrontTombPower(0.0);
+          this.setBackTombPower(0.0);
         });
   }
 }

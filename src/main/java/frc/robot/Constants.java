@@ -83,13 +83,15 @@ public final class Constants {
   public static final class IntakeConstants {
     public static final int frontIntakecanid = 21;
     public static final int backIntakecanid = 22;
-    public static final double intakeSpeed = 0.5;
+    public static final double frontIntakeSpeed = 0.95;
+    public static final double backIntakeSpeed = -0.95;
   }
   public static final class TombConstants {
     // Assumed CAN IDs for Tomb motors. Change these if your hardware uses different IDs.
     public static final int frontTombCanId = 23;
     public static final int backTombCanId = 24;
-    public static final double tombSpeed = 0.5;
+    public static final double backTombSpeed = 0.9;
+    public static final double frontTombSpeed = -0.85;
   }
 
   public static final class AutoConstants {
