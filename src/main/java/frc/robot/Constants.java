@@ -90,8 +90,8 @@ public final class Constants {
     // Assumed CAN IDs for Tomb motors. Change these if your hardware uses different IDs.
     public static final int frontTombCanId = 23;
     public static final int backTombCanId = 24;
-    public static final double backTombSpeed = 0.9;
-    public static final double frontTombSpeed = -0.85;
+    public static final double backTombSpeed = 0.95;
+    public static final double frontTombSpeed = -0.95;
   }
 
   public static final class AutoConstants {
