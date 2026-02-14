@@ -22,6 +22,7 @@ import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.TombSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -42,6 +43,7 @@ public class RobotContainer {
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final ShooterSubsystem m_shooter = new ShooterSubsystem(); 
    private final IntakeSubsystem m_intake = new IntakeSubsystem();
+   private final TombSubsystem m_tomb = new TombSubsystem();
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
@@ -87,6 +89,7 @@ public class RobotContainer {
 
     m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());///rightTrigger().whileTrue(m_shooter.shootCommand());
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
+      m_driverController.y().whileTrue(m_tomb.tomb());
   }
 
   /**
