@@ -80,6 +80,7 @@ public final class Constants {
     public static final int kDriverControllerPort = 0;
     public static final double kDriveDeadband = 0.05;
   }
+
   public static final class IntakeConstants {
     public static final int frontIntakecanid = 21;
     public static final int backIntakecanid = 22;
@@ -90,6 +91,12 @@ public final class Constants {
     public static final int frontTombCanId = 23;
     public static final int backTombCanId = 24;
     public static final double tombSpeed = 0.5;
+  }
+
+  public static final class ClimberConstants {
+    public static final int frontClimbercanid = 23;
+    public static final int backClimbercanid = 24;
+    public static final double climberSpeed = 0.5;
   }
 
   public static final class AutoConstants {
