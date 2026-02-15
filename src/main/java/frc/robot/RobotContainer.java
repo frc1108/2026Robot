@@ -89,7 +89,7 @@ public class RobotContainer {
 
     m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());///rightTrigger().whileTrue(m_shooter.shootCommand());
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
-    m_driverController.rightTrigger().whileTrue(m_intake.reverseIntake());
+    m_driverController.dpadDown().whileTrue(m_intake.reverseIntake());
       m_driverController.y().whileTrue(m_tomb.tomb());
   }
 
