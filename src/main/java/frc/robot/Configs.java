@@ -62,6 +62,6 @@ public final class Configs {
     public static final class Intake {
                 public static final SparkMaxConfig intakeConfig = new SparkMaxConfig();
         static{
-        intakeConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(20).voltageCompensation(10);
+        intakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(20).voltageCompensation(10);
     }}
 }
