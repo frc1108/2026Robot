@@ -55,6 +55,16 @@ public Command intake() {
     });
 }
   
-
+public Command reverseIntake() {
+  return this.startEnd(
+    () -> {
+      this.setFrontIntakePower(IntakeConstants.reverseFrontIntakeSpeed);
+      this.setBackIntakePower(IntakeConstants.reverseBackIntakeSpeed);
+    },
+    () -> {
+      this.setFrontIntakePower(0.0);
+      this.setBackIntakePower(0.0);
+    });
+}
 
 }
