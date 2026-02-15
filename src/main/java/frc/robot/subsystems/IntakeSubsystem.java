@@ -50,8 +50,8 @@ public Command intake() {
       this.setBackIntakePower(IntakeConstants.backIntakeSpeed);
     },
     () -> {
-      this.setFrontIntakePower(0.0);
-      this.setBackIntakePower(0.0);
+      this.setFrontIntakePower(0.1);
+      this.setBackIntakePower(-0.1);
     });
 }
   
@@ -62,8 +62,8 @@ public Command reverseIntake() {
       this.setBackIntakePower(IntakeConstants.reverseBackIntakeSpeed);
     },
     () -> {
-      this.setFrontIntakePower(0.0);
-      this.setBackIntakePower(0.0);
+      this.setFrontIntakePower(0.1);
+      this.setBackIntakePower(-0.1);
     });
 }
 
