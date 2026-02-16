@@ -99,7 +99,7 @@ public final class Constants {
     public static final double frontTombSpeed = -0.95;
     public static final double feederTombSpeed = -0.95;
   // Feeder velocity setpoint (RPM). Adjust as needed for your mechanism and tuning.
-  public static final double feederTombVelocityRpm = 1000.0;
+  public static final double feederTombVelocityRpm = -1500.0;
     public static final double reverseFrontTombSpeed = 0.95;
     public static final double reverseBackTombSpeed = -0.95;
   }

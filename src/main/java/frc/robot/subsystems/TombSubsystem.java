@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -23,6 +24,11 @@ public class TombSubsystem extends SubsystemBase {
   final SparkMax m_backTomb = new SparkMax(TombConstants.backTombCanId, MotorType.kBrushless);
   final SparkMax m_feederTomb = new SparkMax(TombConstants.feederTombCanId, MotorType.kBrushless);
   private SparkClosedLoopController m_feederClosedLoopController;
+  private RelativeEncoder m_feederEncoder;
+  private int m_periodicCounter = 0;
+  // By default use open-loop percent output for the feeder (maps RPM -> percent)
+  // This avoids requiring PID tuning; closed-loop can be enabled later.
+  private boolean m_useFeederClosedLoop = false;
 
   /** Creates a new TombSubsystem. */
   public TombSubsystem() {
@@ -40,6 +46,7 @@ public class TombSubsystem extends SubsystemBase {
     PersistMode.kPersistParameters);
   // Initialize closed-loop controller for the feeder motor
   m_feederClosedLoopController = m_feederTomb.getClosedLoopController();
+  m_feederEncoder = m_feederTomb.getEncoder();
   // Defensive: ensure IdleMode is Brake on each tomb controller
   m_frontTomb.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
     PersistMode.kPersistParameters);
@@ -50,6 +57,17 @@ public class TombSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    // Periodically print feeder status (throttled)
+    m_periodicCounter++;
+    if (m_periodicCounter % 50 == 0) {
+      double vel = Double.NaN;
+      try {
+        vel = m_feederEncoder.getVelocity();
+      } catch (Exception e) {
+        // ignore if encoder not available
+      }
+      System.out.println(String.format("Feeder status - encoderVel=%.2f rpm, closedLoop=%b", vel, m_useFeederClosedLoop));
+    }
   }
 
   private void setFrontTombPower(double power) {
@@ -67,12 +85,26 @@ public class TombSubsystem extends SubsystemBase {
 
   /** Set feeder target velocity in RPM using the SPARK MAX closed-loop controller. */
   public void setFeederVelocityRpm(double rpm) {
-    if (m_feederClosedLoopController != null) {
+    if (m_useFeederClosedLoop && m_feederClosedLoopController != null) {
       m_feederClosedLoopController.setSetpoint(rpm, ControlType.kVelocity);
     } else {
-      // Fallback: if closed-loop controller not available, use open-loop percent output
-      m_feederTomb.set(Math.copySign(0.5, rpm));
+      // Open-loop: map requested RPM to a percent of free speed of the motor
+      double freeRpm = frc.robot.Constants.NeoMotorConstants.kFreeSpeedRpm;
+      double percent = 0.0;
+      if (rpm != 0.0 && freeRpm != 0.0) {
+        percent = rpm / freeRpm;
+        // clamp
+        if (percent > 1.0) percent = 1.0;
+        if (percent < -1.0) percent = -1.0;
+      }
+      m_feederTomb.set(percent);
     }
+  }
+
+  /** Enable or disable closed-loop feeder control at runtime. */
+  public void enableFeederClosedLoop(boolean enabled) {
+    m_useFeederClosedLoop = enabled;
+    System.out.println("Feeder closed-loop set to " + enabled);
   }
 
   public Command tomb() {
