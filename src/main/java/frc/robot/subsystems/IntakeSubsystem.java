@@ -7,6 +7,8 @@ package frc.robot.subsystems;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.units.measure.Power;
@@ -28,6 +30,11 @@ public class IntakeSubsystem extends SubsystemBase {
         Configs.Intake.intakeConfig,
         ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
+      // Defensive: explicitly ensure IdleMode is Brake on each controller
+      m_frontIntake.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
+          PersistMode.kPersistParameters);
+      m_backIntake.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
+          PersistMode.kPersistParameters);
       
     
   }
@@ -50,8 +57,8 @@ public Command intake() {
       this.setBackIntakePower(IntakeConstants.backIntakeSpeed);
     },
     () -> {
-      this.setFrontIntakePower(0.1);
-      this.setBackIntakePower(-0.1);
+      this.setFrontIntakePower(0.0);
+      this.setBackIntakePower(0.0);
     });
 }
   
@@ -62,8 +69,20 @@ public Command reverseIntake() {
       this.setBackIntakePower(IntakeConstants.reverseBackIntakeSpeed);
     },
     () -> {
-      this.setFrontIntakePower(0.1);
-      this.setBackIntakePower(-0.1);
+      this.setFrontIntakePower(0.0);
+      this.setBackIntakePower(0.0);
+    });
+}
+
+public Command slowIntake() {
+  return this.startEnd(
+    () -> {
+      this.setFrontIntakePower(IntakeConstants.slowFrontIntakeSpeed);
+      this.setBackIntakePower(IntakeConstants.slowBackIntakeSpeed);
+    },
+    () -> {
+      this.setFrontIntakePower(0.0);
+      this.setBackIntakePower(0.0);
     });
 }
 

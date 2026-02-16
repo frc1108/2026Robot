@@ -85,6 +85,8 @@ public final class Constants {
     public static final int backIntakecanid = 22;
     public static final double frontIntakeSpeed = 0.95;
     public static final double backIntakeSpeed = -0.95;
+    public static final double slowFrontIntakeSpeed = 0.25;
+    public static final double slowBackIntakeSpeed = -0.95;
     public static final double reverseFrontIntakeSpeed = -0.95;
     public static final double reverseBackIntakeSpeed = 0.95;
   }
@@ -94,6 +96,8 @@ public final class Constants {
     public static final int backTombCanId = 24;
     public static final double backTombSpeed = 0.95;
     public static final double frontTombSpeed = -0.95;
+    public static final double reverseFrontTombSpeed = 0.95;
+    public static final double reverseBackTombSpeed = -0.95;
   }
 
   public static final class AutoConstants {

@@ -26,7 +26,7 @@ private void setShooterPower(double power) {
 }
 
 public Command shootCommand() {
-return this.startEnd( () -> this.setShooterPower(0.60), () -> this.setShooterPower(0.0));
+return this.startEnd( () -> this.setShooterPower(0.10), () -> this.setShooterPower(0.0));
 }
 
 }

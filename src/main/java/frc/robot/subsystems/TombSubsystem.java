@@ -8,6 +8,8 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -28,6 +30,11 @@ public class TombSubsystem extends SubsystemBase {
         Configs.Intake.intakeConfig,
         ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
+  // Defensive: ensure IdleMode is Brake on each tomb controller
+  m_frontTomb.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
+    PersistMode.kPersistParameters);
+  m_backTomb.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
+    PersistMode.kPersistParameters);
   }
 
   @Override
@@ -49,6 +56,19 @@ public class TombSubsystem extends SubsystemBase {
         () -> {
           this.setFrontTombPower(TombConstants.frontTombSpeed);
           this.setBackTombPower(TombConstants.backTombSpeed);
+            
+        },
+        () -> {
+          this.setFrontTombPower(0.0);
+          this.setBackTombPower(0.0);
+        });
+  }
+
+    public Command reverseTomb() {
+    return this.startEnd(
+        () -> {
+          this.setFrontTombPower(TombConstants.reverseFrontTombSpeed);
+          this.setBackTombPower(TombConstants.reverseBackTombSpeed);
             
         },
         () -> {
