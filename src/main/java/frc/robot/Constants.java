@@ -94,8 +94,12 @@ public final class Constants {
     // Assumed CAN IDs for Tomb motors. Change these if your hardware uses different IDs.
     public static final int frontTombCanId = 23;
     public static final int backTombCanId = 24;
+    public static final int feederTombCanId = 25;
     public static final double backTombSpeed = 0.95;
     public static final double frontTombSpeed = -0.95;
+    public static final double feederTombSpeed = -0.95;
+  // Feeder velocity setpoint (RPM). Adjust as needed for your mechanism and tuning.
+  public static final double feederTombVelocityRpm = 1000.0;
     public static final double reverseFrontTombSpeed = 0.95;
     public static final double reverseBackTombSpeed = -0.95;
   }
