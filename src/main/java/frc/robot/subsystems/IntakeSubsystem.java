@@ -113,7 +113,7 @@ public Command intake() {
   this.setIntakeVelocityRpm(IntakeConstants.intakeFrontVelocityRpm, IntakeConstants.intakeBackVelocityRpm);
     },
     () -> {
-      this.setIntakeVelocityRpm(300.0, -300.0);
+      this.setIntakeVelocityRpm(500.0, -500.0);
     });
 }
   
@@ -124,7 +124,7 @@ public Command reverseIntake() {
       IntakeConstants.reverseIntakeBackVelocityRpm);
     },
     () -> {
-      this.setIntakeVelocityRpm(300.0, -300.0);
+      this.setIntakeVelocityRpm(500.0, -500.0);
     });
 }
 
@@ -134,7 +134,7 @@ public Command slowIntake() {
   this.setIntakeVelocityRpm(IntakeConstants.slowIntakeFrontVelocityRpm, IntakeConstants.slowIntakeBackVelocityRpm);
     },
     () -> {
-      this.setIntakeVelocityRpm(300.0, -300.0);
+      this.setIntakeVelocityRpm(500.0, -500.0);
     });
 }
 
@@ -142,7 +142,7 @@ public Command slowIntake() {
   public Command intakeVelocityCommand() {
   return this.startEnd(
     () -> this.setIntakeVelocityRpm(IntakeConstants.intakeFrontVelocityRpm, IntakeConstants.intakeBackVelocityRpm),
-    () -> this.setIntakeVelocityRpm(300.0, -300.0));
+    () -> this.setIntakeVelocityRpm(500.0, -500.0));
   }
 
 }
