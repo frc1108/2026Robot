@@ -10,7 +10,10 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
@@ -19,10 +22,14 @@ import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.TombSubsystem;
+import frc.robot.subsystems.VisionSubsystem;
+import frc.robot.commands.AimAtHopperCommand;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -41,9 +48,11 @@ import java.util.List;
 public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
-  private final ShooterSubsystem m_shooter = new ShooterSubsystem(); 
-   private final IntakeSubsystem m_intake = new IntakeSubsystem();
-   private final TombSubsystem m_tomb = new TombSubsystem();
+  private final ShooterSubsystem m_shooter = new ShooterSubsystem();
+  private final HoodSubsystem m_hood = new HoodSubsystem();
+  private final IntakeSubsystem m_intake = new IntakeSubsystem();
+  private final TombSubsystem m_tomb = new TombSubsystem();
+  private VisionSubsystem m_vision; // Initialized in constructor after DriveSubsystem is ready
   // The driver's controller
   CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
@@ -51,6 +60,32 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    // Initialize VisionSubsystem with pose callback and camera offset
+    // The callback updates robot pose from vision estimates
+    try {
+      m_vision = new VisionSubsystem(
+          m_robotDrive::addVisionMeasurement,  // Callback to update drive odometry
+          m_robotDrive,
+          VisionConstants.kCameraName,
+          new Transform3d(
+              new Translation3d(
+                  VisionConstants.kCameraOffsetX,
+                  VisionConstants.kCameraOffsetY,
+                  VisionConstants.kCameraOffsetZ),
+              new Rotation3d(
+                  VisionConstants.kCameraRotX,
+                  VisionConstants.kCameraRotY,
+                  VisionConstants.kCameraRotZ)
+          )
+      );
+    } catch (Exception e) {
+      System.err.println("Failed to initialize VisionSubsystem: " + e.getMessage());
+      e.printStackTrace();
+    }
+
+    // Connect hood subsystem to shooter
+    m_shooter.setHoodSubsystem(m_hood);
+
     // Configure the button bindings
     configureButtonBindings();
 
@@ -87,13 +122,25 @@ public class RobotContainer {
     //         () -> m_robotDrive.zeroHeading(),
     //         m_robotDrive));
 
-    m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());///rightTrigger().whileTrue(m_shooter.shootCommand());
+    // Vision/Aiming
+    if (m_vision != null) {
+      m_driverController.a().whileTrue(new AimAtHopperCommand(m_vision, m_robotDrive));
+    }
+    
+    // Shooting
+    m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());
     m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
+    
+    // Intake
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
+    m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
-    m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
     m_driverController.y().whileTrue(m_tomb.tomb());
+    
+    // Hood controls (quick preset angles)
+    m_driverController.x().onTrue(m_hood.setHoodAngleCommand(15.0)); // Low angle
+    m_driverController.b().onTrue(m_hood.setHoodAngleCommand(30.0)); // Mid angle
   }
 
   /**

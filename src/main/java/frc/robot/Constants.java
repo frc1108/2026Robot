@@ -129,4 +129,56 @@ public final class Constants {
   public static final class NeoMotorConstants {
     public static final double kFreeSpeedRpm = 5676;
   }
+
+  public static final class ShooterConstants {
+    // Kraken X60 shooter motors
+    public static final int kLeftShooterCanId = 31;
+    public static final int kRightShooterCanId = 32;
+    
+    // Hood control - Neo 550
+    public static final int kHoodMotorCanId = 33;
+    public static final double kHoodGearRatio = 50.0; // Adjust based on your gearbox reduction
+    public static final double kMinHoodAngleDegrees = 0.0;
+    public static final double kMaxHoodAngleDegrees = 45.0;
+    
+    // PID constants for hood control
+    public static final double kHoodP = 0.5;
+    public static final double kHoodI = 0.0;
+    public static final double kHoodD = 0.1;
+    
+    // Shooter speed presets
+    public static final double kShooterFullSpeed = 0.90;
+    public static final double kShooterSlowSpeed = 0.50;
+  }
+
+  public static final class VisionConstants {
+    // PhotonVision camera name (must match the name in PhotonVision UI)
+    public static final String kCameraName = "shooter_camera";
+    
+    // April tag IDs
+    public static final int kHopperTagId = 5; // Change to your hopper's April tag ID
+    
+    // Camera mounting position relative to robot center (meters and radians)
+    // Transform3d: Translation3d(x, y, z) and Rotation3d
+    // X = forward/backward, Y = left/right, Z = up/down
+    public static final double kCameraOffsetX = 0.0;  // Forward/backward offset (meters)
+    public static final double kCameraOffsetY = 0.0;  // Left/right offset (meters)
+    public static final double kCameraOffsetZ = 0.5;  // Up/down offset (meters) - adjust to camera height
+    public static final double kCameraRotX = 0.0;     // Roll (radians)
+    public static final double kCameraRotY = 0.0;     // Pitch (radians)
+    public static final double kCameraRotZ = 0.0;     // Yaw (radians)
+    
+    // Vision filtering constants
+    public static final double kMaxDistanceMeters = 10.0;  // Max distance to consider targets
+    public static final double kMaxAmbiguity = 0.35;       // Max pose ambiguity (0-1)
+    
+    // PID constants for aiming rotation
+    public static final double kAimP = 0.02;
+    public static final double kAimI = 0.0;
+    public static final double kAimD = 0.001;
+    
+    // Tolerance for aiming (degrees)
+    public static final double kAimingToleranceDegrees = 2.0;
+    public static final double kAimingTimeoutSeconds = 2.0;
+  }
 }

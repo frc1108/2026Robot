@@ -186,6 +186,17 @@ public class DriveSubsystem extends SubsystemBase {
     //return Rotation2d.fromDegrees(m_gyro.getAngle(IMUAxis.kZ)).getDegrees();
   }
 
+  /**
+   * Add a vision measurement to the odometry. This is called by VisionSubsystem
+   * to update the robot's estimated pose based on AprilTag detections.
+   * 
+   * @param estimatedPose The estimated pose from vision
+   * @param timestampSeconds The timestamp of the measurement
+   */
+  public void addVisionMeasurement(Pose2d estimatedPose, double timestampSeconds) {
+    m_odometry.addVisionMeasurement(estimatedPose, timestampSeconds);
+  }
+
   // /**
   //  * Returns the turn rate of the robot.
   //  *
