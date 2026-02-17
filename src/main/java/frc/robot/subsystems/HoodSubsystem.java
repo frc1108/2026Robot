@@ -1,10 +1,12 @@
 package frc.robot.subsystems;
 
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkBase.ControlType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkPIDController;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.ResetMode;
+import com.revrobotics.PersistMode;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
@@ -14,25 +16,19 @@ import frc.robot.Constants.ShooterConstants;
 
 @Logged
 public class HoodSubsystem extends SubsystemBase {
-  private final CANSparkMax m_hoodMotor;
+  private final SparkMax m_hoodMotor;
   private final RelativeEncoder m_hoodEncoder;
-  private final SparkPIDController m_hoodPID;
+  private final SparkClosedLoopController m_hoodPID;
 
   /** Creates a new HoodSubsystem. */
   public HoodSubsystem() {
-    m_hoodMotor = new CANSparkMax(ShooterConstants.kHoodMotorCanId, MotorType.kBrushless);
-    m_hoodMotor.restoreFactoryDefaults();
-    m_hoodMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-    
+    m_hoodMotor = new SparkMax(ShooterConstants.kHoodMotorCanId, MotorType.kBrushless);
+
+  // Apply hood SparkMax configuration from central `Configs` and configure device
+  m_hoodMotor.configure(frc.robot.Configs.Shooter.hoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
     m_hoodEncoder = m_hoodMotor.getEncoder();
-    m_hoodEncoder.setPositionConversionFactor(360.0 / ShooterConstants.kHoodGearRatio); // Convert to degrees
-    m_hoodEncoder.setVelocityConversionFactor(360.0 / (ShooterConstants.kHoodGearRatio * 60.0)); // Convert to degrees per second
-    
-    m_hoodPID = m_hoodMotor.getPIDController();
-    m_hoodPID.setP(ShooterConstants.kHoodP);
-    m_hoodPID.setI(ShooterConstants.kHoodI);
-    m_hoodPID.setD(ShooterConstants.kHoodD);
-    m_hoodPID.setOutputRange(-1.0, 1.0);
+    m_hoodPID = m_hoodMotor.getClosedLoopController();
   }
 
   @Override
@@ -48,7 +44,7 @@ public class HoodSubsystem extends SubsystemBase {
     double clampedAngle = MathUtil.clamp(angleDegrees, 
         ShooterConstants.kMinHoodAngleDegrees, 
         ShooterConstants.kMaxHoodAngleDegrees);
-    m_hoodPID.setReference(clampedAngle, ControlType.kPosition);
+  m_hoodPID.setSetpoint(clampedAngle, ControlType.kPosition);
   }
 
   /**
