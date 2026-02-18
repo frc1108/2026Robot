@@ -152,22 +152,30 @@ public final class Constants {
   }
 
   public static final class VisionConstants {
-  // PhotonVision camera name (must match the name in PhotonVision UI)
-  public static final String kCameraName = "LeftSideCamera";
-    
+    // PhotonVision camera names (must match the name in PhotonVision UI)
+  public static final String kLeftCameraName = "LeftSideCamera";
+  public static final String kRightCameraName = "RightSideCamera";
+
     // April tag IDs
     public static final int kHopperTagId = 26; // Change to your hopper's April tag ID
-    
+
     // Camera mounting position relative to robot center (meters and radians)
-    // Transform3d: Translation3d(x, y, z) and Rotation3d
-    // X = forward/backward, Y = left/right, Z = up/down
-    public static final double kCameraOffsetX = 0.0;  // Forward/backward offset (meters)
-    public static final double kCameraOffsetY = 0.356;  // Left/right offset (meters)
-    public static final double kCameraOffsetZ = 0.711;  // Up/down offset (meters) - adjust to camera height
-    public static final double kCameraRotX = 0.0;     // Roll (radians)
-    public static final double kCameraRotY = 0.0;     // Pitch (radians)
-    public static final double kCameraRotZ = 0.0;     // Yaw (radians)
-    
+    // Left camera (these were the previous single-camera defaults)
+    public static final double kLeftCameraOffsetX = 0.0;  // Forward/backward offset (meters)
+    public static final double kLeftCameraOffsetY = 0.356;  // Left/right offset (meters)
+    public static final double kLeftCameraOffsetZ = 0.711;  // Up/down offset (meters) - adjust to camera height
+    public static final double kLeftCameraRotX = 3.14159;     // Roll (radians)
+    public static final double kLeftCameraRotY = 0.0;     // Pitch (radians)
+    public static final double kLeftCameraRotZ = -1.57;     // Yaw (radians)
+
+  // Right camera (mirror of left)
+    public static final double kRightCameraOffsetX = 0.0;
+    public static final double kRightCameraOffsetY = -0.356;
+    public static final double kRightCameraOffsetZ = 0.711;
+    public static final double kRightCameraRotX = 3.14159;
+    public static final double kRightCameraRotY = 0.0;
+    public static final double kRightCameraRotZ = -1.57;
+
     // Vision filtering constants
     public static final double kMaxDistanceMeters = 10.0;  // Max distance to consider targets
     public static final double kMaxAmbiguity = 0.35;       // Max pose ambiguity (0-1)

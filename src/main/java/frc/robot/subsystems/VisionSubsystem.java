@@ -28,8 +28,8 @@ import frc.robot.Constants.VisionConstants;
 
 @Logged
 public class VisionSubsystem extends SubsystemBase {
-  private final PhotonCamera photonCamera;
-  private final PhotonPoseEstimator poseEstimator;
+  private final List<PhotonCamera> photonCameras = new ArrayList<>();
+  private final List<PhotonPoseEstimator> poseEstimators = new ArrayList<>();
   private final AprilTagFieldLayout fieldLayout;
   private final BiConsumer<Pose2d, Double> consumer;
   @NotLogged private final DriveSubsystem drive;
@@ -44,68 +44,129 @@ public class VisionSubsystem extends SubsystemBase {
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive, String LeftSideCamera,
-      Transform3d cameraOffset) throws IOException {
-    photonCamera = new PhotonCamera(LeftSideCamera);
+    Transform3d cameraOffset) throws IOException {
+  // Backwards-compatible constructor: create single camera/estimator lists
+  photonCameras.add(new PhotonCamera(LeftSideCamera));
+  System.out.println("[VisionSubsystem] Camera name: " + LeftSideCamera + ", cameraOffset=" + cameraOffset);
 
-    // Log camera name and offset to help tune the mounting transform
-    System.out.println("[VisionSubsystem] Camera name: " + LeftSideCamera + ", cameraOffset=" + cameraOffset);
+  fieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
+  poseEstimators.add(new PhotonPoseEstimator(fieldLayout,
+    PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    cameraOffset));
+  estimated3dPose = new Pose3d();
+  this.consumer = consumer;
+  this.drive = drive;
+  }
 
-    fieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
-    poseEstimator = new PhotonPoseEstimator(fieldLayout,
-        PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        cameraOffset);
-    estimated3dPose = new Pose3d();
-    this.consumer = consumer;
-    this.drive = drive;
+  /** Multi-camera constructor: initializes three cameras and pose estimators based on Constants. */
+  public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive) throws IOException {
+  fieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
+  this.consumer = consumer;
+  this.drive = drive;
+  estimated3dPose = new Pose3d();
+
+  // Left camera
+  Transform3d leftOffset = new Transform3d(
+    new edu.wpi.first.math.geometry.Translation3d(VisionConstants.kLeftCameraOffsetX,
+      VisionConstants.kLeftCameraOffsetY, VisionConstants.kLeftCameraOffsetZ),
+    new edu.wpi.first.math.geometry.Rotation3d(VisionConstants.kLeftCameraRotX,
+      VisionConstants.kLeftCameraRotY, VisionConstants.kLeftCameraRotZ));
+  photonCameras.add(new PhotonCamera(VisionConstants.kLeftCameraName));
+  poseEstimators.add(new PhotonPoseEstimator(fieldLayout,
+    PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, leftOffset));
+  System.out.println("[VisionSubsystem] Added camera: " + VisionConstants.kLeftCameraName + ", offset=" + leftOffset);
+
+  // Right camera
+  Transform3d rightOffset = new Transform3d(
+    new edu.wpi.first.math.geometry.Translation3d(VisionConstants.kRightCameraOffsetX,
+      VisionConstants.kRightCameraOffsetY, VisionConstants.kRightCameraOffsetZ),
+    new edu.wpi.first.math.geometry.Rotation3d(VisionConstants.kRightCameraRotX,
+      VisionConstants.kRightCameraRotY, VisionConstants.kRightCameraRotZ));
+  photonCameras.add(new PhotonCamera(VisionConstants.kRightCameraName));
+  poseEstimators.add(new PhotonPoseEstimator(fieldLayout,
+    PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightOffset));
+  System.out.println("[VisionSubsystem] Added camera: " + VisionConstants.kRightCameraName + ", offset=" + rightOffset);
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    if (!photonCamera.isConnected()) {
-      hopperVisible = false;
-      return;
-    }
+    // We'll iterate through all configured cameras, update their pose estimators,
+    // and publish any valid estimates to the DriveSubsystem. We'll also aggregate
+    // hopper (tag) detections across cameras and pick the best one.
+    Pose2d fallbackPose = drive.getPose();
+    Pose2d robotPoseForFiltering = (estimated3dPose != null) ? estimated3dPose.toPose2d() : fallbackPose;
 
-    var pipeLineResult = photonCamera.getLatestResult();
-    boolean hasTargets = pipeLineResult.hasTargets();
-    if (!hasTargets) {
-      hopperVisible = false;
-      return;
-    }
+    // Track best hopper detection across all cameras (choose by lowest ambiguity)
+    PhotonTrackedTarget bestHopperTarget = null;
+    double bestHopperAmbiguity = Double.MAX_VALUE;
+    Pose2d bestHopperPoseForDistance = fallbackPose;
 
-    // Filter targets by ambiguity and distance (use previous estimated pose if available,
-    // otherwise fall back to odometry). This avoids biasing distance checks to only the
-    // odometry pose and lets the pose estimator act on multiple tags.
-    Pose2d robotPoseForFiltering = (estimated3dPose != null) ? estimated3dPose.toPose2d() : drive.getPose();
-    List<PhotonTrackedTarget> badTargets = new ArrayList<>();
-    for (PhotonTrackedTarget target : pipeLineResult.targets) {
-      var tagPose = fieldLayout.getTagPose(target.getFiducialId());
-      if (tagPose.isEmpty()) {
-        badTargets.add(target);
+    for (int i = 0; i < photonCameras.size(); i++) {
+      PhotonCamera cam = photonCameras.get(i);
+      PhotonPoseEstimator est = poseEstimators.get(i);
+
+      if (!cam.isConnected()) {
         continue;
       }
-      var distanceToTag = PhotonUtils.getDistanceToPose(robotPoseForFiltering, tagPose.get().toPose2d());
-      if (target.getPoseAmbiguity() > VisionConstants.kMaxAmbiguity || distanceToTag > VisionConstants.kMaxDistanceMeters) {
-        badTargets.add(target);
+
+      var result = cam.getLatestResult();
+      if (!result.hasTargets()) {
+        continue;
+      }
+
+      // Filter targets by ambiguity and distance before updating estimator
+      List<PhotonTrackedTarget> badTargets = new ArrayList<>();
+      for (PhotonTrackedTarget target : result.targets) {
+        var tagPose = fieldLayout.getTagPose(target.getFiducialId());
+        if (tagPose.isEmpty()) {
+          badTargets.add(target);
+          continue;
+        }
+        var distanceToTag = PhotonUtils.getDistanceToPose(robotPoseForFiltering, tagPose.get().toPose2d());
+        if (target.getPoseAmbiguity() > VisionConstants.kMaxAmbiguity || distanceToTag > VisionConstants.kMaxDistanceMeters) {
+          badTargets.add(target);
+        }
+      }
+      result.targets.removeAll(badTargets);
+
+      // Update this camera's pose estimator
+      Optional<EstimatedRobotPose> poseResult = est.update(result);
+      if (poseResult.isPresent()) {
+        EstimatedRobotPose estimatedPose = poseResult.get();
+        estimated3dPose = estimatedPose.estimatedPose;
+        // Publish to drive odometry (WPILib pose estimator will fuse it)
+        consumer.accept(estimatedPose.estimatedPose.toPose2d(), estimatedPose.timestampSeconds);
+      }
+
+      // Check for hopper tag detections in this camera's result and keep the best one
+      for (PhotonTrackedTarget target : result.targets) {
+        if (target.getFiducialId() == VisionConstants.kHopperTagId) {
+          if (target.getPoseAmbiguity() < bestHopperAmbiguity) {
+            bestHopperAmbiguity = target.getPoseAmbiguity();
+            bestHopperTarget = target;
+            bestHopperPoseForDistance = (estimated3dPose != null) ? estimated3dPose.toPose2d() : fallbackPose;
+          }
+        }
       }
     }
-    pipeLineResult.targets.removeAll(badTargets);
 
-    // Update robot pose estimation first (so we prefer multi-tag pose estimation for
-    // downstream calculations when available), then update hopper targeting using the
-    // estimated pose if present.
-    Optional<EstimatedRobotPose> poseResult = poseEstimator.update(pipeLineResult);
-    if (poseResult.isPresent()) {
-      EstimatedRobotPose estimatedPose = poseResult.get();
-      estimated3dPose = estimatedPose.estimatedPose;
-      // Provide the new estimate to the drive (caller) via the consumer
-      consumer.accept(estimatedPose.estimatedPose.toPose2d(), estimatedPose.timestampSeconds);
-      // Use the estimator's pose for hopper distance and other calculations
-      updateHopperTargeting(pipeLineResult, estimatedPose.estimatedPose.toPose2d());
+    // Update hopper targeting data based on best found target (if any)
+    if (bestHopperTarget != null) {
+      hopperVisible = true;
+      hopperYaw = bestHopperTarget.getYaw();
+      hopperPitch = bestHopperTarget.getPitch();
+      hopperAmbiguity = bestHopperTarget.getPoseAmbiguity();
+      var tagPose = fieldLayout.getTagPose(bestHopperTarget.getFiducialId());
+      if (tagPose.isPresent()) {
+        hopperDistance = PhotonUtils.getDistanceToPose(bestHopperPoseForDistance, tagPose.get().toPose2d());
+      }
     } else {
-      // No pose estimate available this cycle; fall back to odometry-based calculations
-      updateHopperTargeting(pipeLineResult, drive.getPose());
+      hopperVisible = false;
+      hopperYaw = 0.0;
+      hopperPitch = 0.0;
+      hopperDistance = 0.0;
+      hopperAmbiguity = 1.0;
     }
   }
 

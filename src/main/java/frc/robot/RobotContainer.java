@@ -63,21 +63,8 @@ public class RobotContainer {
     // Initialize VisionSubsystem with pose callback and camera offset
     // The callback updates robot pose from vision estimates
     try {
-      m_vision = new VisionSubsystem(
-          m_robotDrive::addVisionMeasurement,  // Callback to update drive odometry
-          m_robotDrive,
-          VisionConstants.kCameraName,
-          new Transform3d(
-              new Translation3d(
-                  VisionConstants.kCameraOffsetX,
-                  VisionConstants.kCameraOffsetY,
-                  VisionConstants.kCameraOffsetZ),
-              new Rotation3d(
-                  VisionConstants.kCameraRotX,
-                  VisionConstants.kCameraRotY,
-                  VisionConstants.kCameraRotZ)
-          )
-      );
+      // Use the multi-camera constructor which reads camera names and offsets from Constants
+      m_vision = new VisionSubsystem(m_robotDrive::addVisionMeasurement, m_robotDrive);
     } catch (Exception e) {
       System.err.println("Failed to initialize VisionSubsystem: " + e.getMessage());
       e.printStackTrace();
@@ -124,7 +111,11 @@ public class RobotContainer {
 
     // Vision/Aiming
     if (m_vision != null) {
-      m_driverController.a().whileTrue(new AimAtHopperCommand(m_vision, m_robotDrive));
+      // Replace AimAtHopper on A with a simple snap-to-angle 0 while held
+      m_driverController.a().whileTrue(new frc.robot.commands.SnapToAngleCommand(m_robotDrive));
+
+      // While POV Right is held, drive while actively aiming at the hopper
+      m_driverController.povRight().whileTrue(new frc.robot.commands.AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
     }
     
     // Shooting
