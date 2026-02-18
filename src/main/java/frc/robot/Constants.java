@@ -152,18 +152,18 @@ public final class Constants {
   }
 
   public static final class VisionConstants {
-    // PhotonVision camera name (must match the name in PhotonVision UI)
-    public static final String kCameraName = "shooter_camera";
+  // PhotonVision camera name (must match the name in PhotonVision UI)
+  public static final String kCameraName = "LeftSideCamera";
     
     // April tag IDs
-    public static final int kHopperTagId = 5; // Change to your hopper's April tag ID
+    public static final int kHopperTagId = 26; // Change to your hopper's April tag ID
     
     // Camera mounting position relative to robot center (meters and radians)
     // Transform3d: Translation3d(x, y, z) and Rotation3d
     // X = forward/backward, Y = left/right, Z = up/down
     public static final double kCameraOffsetX = 0.0;  // Forward/backward offset (meters)
-    public static final double kCameraOffsetY = 0.0;  // Left/right offset (meters)
-    public static final double kCameraOffsetZ = 0.5;  // Up/down offset (meters) - adjust to camera height
+    public static final double kCameraOffsetY = 0.356;  // Left/right offset (meters)
+    public static final double kCameraOffsetZ = 0.711;  // Up/down offset (meters) - adjust to camera height
     public static final double kCameraRotX = 0.0;     // Roll (radians)
     public static final double kCameraRotY = 0.0;     // Pitch (radians)
     public static final double kCameraRotZ = 0.0;     // Yaw (radians)

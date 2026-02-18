@@ -43,9 +43,12 @@ public class VisionSubsystem extends SubsystemBase {
   @Logged private boolean hopperVisible = false;
 
   /** Creates a new VisionSubsystem. */
-  public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive, String photonCameraName,
+  public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive, String LeftSideCamera,
       Transform3d cameraOffset) throws IOException {
-    photonCamera = new PhotonCamera(photonCameraName);
+    photonCamera = new PhotonCamera(LeftSideCamera);
+
+    // Log camera name and offset to help tune the mounting transform
+    System.out.println("[VisionSubsystem] Camera name: " + LeftSideCamera + ", cameraOffset=" + cameraOffset);
 
     fieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
     poseEstimator = new PhotonPoseEstimator(fieldLayout,
@@ -71,7 +74,10 @@ public class VisionSubsystem extends SubsystemBase {
       return;
     }
 
-    // Filter targets by ambiguity and distance
+    // Filter targets by ambiguity and distance (use previous estimated pose if available,
+    // otherwise fall back to odometry). This avoids biasing distance checks to only the
+    // odometry pose and lets the pose estimator act on multiple tags.
+    Pose2d robotPoseForFiltering = (estimated3dPose != null) ? estimated3dPose.toPose2d() : drive.getPose();
     List<PhotonTrackedTarget> badTargets = new ArrayList<>();
     for (PhotonTrackedTarget target : pipeLineResult.targets) {
       var tagPose = fieldLayout.getTagPose(target.getFiducialId());
@@ -79,32 +85,34 @@ public class VisionSubsystem extends SubsystemBase {
         badTargets.add(target);
         continue;
       }
-      var distanceToTag = PhotonUtils.getDistanceToPose(drive.getPose(), tagPose.get().toPose2d());
-      if (target.getPoseAmbiguity() > 0.35 || distanceToTag > VisionConstants.kMaxDistanceMeters) {
+      var distanceToTag = PhotonUtils.getDistanceToPose(robotPoseForFiltering, tagPose.get().toPose2d());
+      if (target.getPoseAmbiguity() > VisionConstants.kMaxAmbiguity || distanceToTag > VisionConstants.kMaxDistanceMeters) {
         badTargets.add(target);
       }
     }
     pipeLineResult.targets.removeAll(badTargets);
 
-    // Update hopper targeting data
-    updateHopperTargeting(pipeLineResult);
-
-    // Update robot pose estimation
+    // Update robot pose estimation first (so we prefer multi-tag pose estimation for
+    // downstream calculations when available), then update hopper targeting using the
+    // estimated pose if present.
     Optional<EstimatedRobotPose> poseResult = poseEstimator.update(pipeLineResult);
-    boolean posePresent = poseResult.isPresent();
-    if (!posePresent)
-      return;
-
-    EstimatedRobotPose estimatedPose = poseResult.get();
-
-    estimated3dPose = estimatedPose.estimatedPose;
-    consumer.accept(estimatedPose.estimatedPose.toPose2d(), estimatedPose.timestampSeconds);
+    if (poseResult.isPresent()) {
+      EstimatedRobotPose estimatedPose = poseResult.get();
+      estimated3dPose = estimatedPose.estimatedPose;
+      // Provide the new estimate to the drive (caller) via the consumer
+      consumer.accept(estimatedPose.estimatedPose.toPose2d(), estimatedPose.timestampSeconds);
+      // Use the estimator's pose for hopper distance and other calculations
+      updateHopperTargeting(pipeLineResult, estimatedPose.estimatedPose.toPose2d());
+    } else {
+      // No pose estimate available this cycle; fall back to odometry-based calculations
+      updateHopperTargeting(pipeLineResult, drive.getPose());
+    }
   }
 
   /**
    * Update hopper targeting data from camera results
    */
-  private void updateHopperTargeting(org.photonvision.targeting.PhotonPipelineResult result) {
+  private void updateHopperTargeting(org.photonvision.targeting.PhotonPipelineResult result, Pose2d robotPose) {
     hopperVisible = false;
     hopperYaw = 0.0;
     hopperPitch = 0.0;
@@ -125,7 +133,7 @@ public class VisionSubsystem extends SubsystemBase {
         // Calculate distance from tag pose
         var tagPose = fieldLayout.getTagPose(target.getFiducialId());
         if (tagPose.isPresent()) {
-          hopperDistance = PhotonUtils.getDistanceToPose(drive.getPose(), tagPose.get().toPose2d());
+          hopperDistance = PhotonUtils.getDistanceToPose(robotPose, tagPose.get().toPose2d());
         }
         return; // Only track the first hopper tag found
       }
