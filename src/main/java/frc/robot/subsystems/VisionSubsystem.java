@@ -36,9 +36,9 @@ public class VisionSubsystem extends SubsystemBase {
   private Pose3d estimated3dPose;
 
   /** Creates a new VisionSubsystem. */
-  public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive, String photonCameraName,
+  public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive, String LeftSideCamera,
   Transform3d cameraOffset) throws IOException{
-    photonCamera = new PhotonCamera(photonCameraName);
+    photonCamera = new PhotonCamera(LeftSideCamera);
 
     fieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
  poseEstimator = new PhotonPoseEstimator(fieldLayout,
