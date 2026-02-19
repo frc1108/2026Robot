@@ -112,11 +112,13 @@ public class RobotContainer {
     // Vision/Aiming
     if (m_vision != null) {
       // Replace AimAtHopper on A with a simple snap-to-angle 0 while held
-      m_driverController.a().whileTrue(new frc.robot.commands.SnapToAngleCommand(m_robotDrive));
+      //m_driverController.a().whileTrue(new frc.robot.commands.SnapToAngleCommand(m_robotDrive));
 
       // While POV Right is held, drive while actively aiming at the hopper
-      m_driverController.povRight().whileTrue(new frc.robot.commands.AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
+      m_driverController.a().whileTrue(new frc.robot.commands.AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
     }
+
+    // (calibration command removed) Start button binding intentionally left empty
     
     // Shooting
     m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());

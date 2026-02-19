@@ -137,7 +137,7 @@ public final class Constants {
     
     // Hood control - Neo 550
     public static final int kHoodMotorCanId = 33;
-    public static final double kHoodGearRatio = 50.0; // Adjust based on your gearbox reduction
+    public static final double kHoodGearRatio = 36.0; // Adjust based on your gearbox reduction
     public static final double kMinHoodAngleDegrees = 0.0;
     public static final double kMaxHoodAngleDegrees = 45.0;
     
@@ -149,6 +149,11 @@ public final class Constants {
     // Shooter speed presets
     public static final double kShooterFullSpeed = 0.90;
     public static final double kShooterSlowSpeed = 0.50;
+
+    // Auto-hood interpolation table (distance meters -> hood angle degrees).
+    // Replace these with measured shot data from your robot.
+    public static final double[] kHoodDistanceMeters = {1.5, 2.5, 3.5, 4.5};
+    public static final double[] kHoodAngleDegrees = {34.0, 28.0, 22.0, 17.0};
   }
 
   public static final class VisionConstants {
@@ -158,23 +163,35 @@ public final class Constants {
 
     // April tag IDs
     public static final int kHopperTagId = 26; // Change to your hopper's April tag ID
+    // Offset from hopper AprilTag to the actual hopper center, in the tag's frame.
+    // +Forward is out from the tag face normal; +Left is tag-left.
+    public static final double kHopperCenterOffsetForwardMeters = -0.305;
+    public static final double kHopperCenterOffsetLeftMeters = 0.0;
+    // Shooter mount geometry in robot frame.
+    // +Forward is toward robot front bumper, +Left is toward robot left bumper.
+    public static final double kShooterOffsetForwardMeters = -0.2;
+    public static final double kShooterOffsetLeftMeters = 0.2;
+    // Shooter bore direction relative to robot forward. Left-facing shooter is +90 deg.
+    public static final double kShooterYawOffsetDegrees = 90.0;
 
     // Camera mounting position relative to robot center (meters and radians)
     // Left camera (these were the previous single-camera defaults)
     public static final double kLeftCameraOffsetX = 0.0;  // Forward/backward offset (meters)
-    public static final double kLeftCameraOffsetY = 0.356;  // Left/right offset (meters)
+    public static final double kLeftCameraOffsetY = 0.368;  // Left/right offset (meters)
     public static final double kLeftCameraOffsetZ = 0.711;  // Up/down offset (meters) - adjust to camera height
-    public static final double kLeftCameraRotX = 3.14159;     // Roll (radians)
-    public static final double kLeftCameraRotY = 0.0;     // Pitch (radians)
-    public static final double kLeftCameraRotZ = -1.57;     // Yaw (radians)
+  // If the left camera is looking straight to the left and mounted level:
+  public static final double kLeftCameraRotX = 0.0;     // Roll (radians)
+  public static final double kLeftCameraRotY = 0.0;     // Pitch (radians)
+  public static final double kLeftCameraRotZ = 1.5708;     // Yaw (radians) (+90°)
 
   // Right camera (mirror of left)
     public static final double kRightCameraOffsetX = 0.0;
-    public static final double kRightCameraOffsetY = -0.356;
+    public static final double kRightCameraOffsetY = -0.368;
     public static final double kRightCameraOffsetZ = 0.711;
-    public static final double kRightCameraRotX = 3.14159;
-    public static final double kRightCameraRotY = 0.0;
-    public static final double kRightCameraRotZ = -1.57;
+  // If the right camera is looking straight to the right and mounted level:
+  public static final double kRightCameraRotX = 0.0;
+  public static final double kRightCameraRotY = 0.0;
+  public static final double kRightCameraRotZ = -1.5708; // (-90°)
 
     // Vision filtering constants
     public static final double kMaxDistanceMeters = 10.0;  // Max distance to consider targets

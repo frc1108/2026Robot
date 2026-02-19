@@ -1,5 +1,7 @@
 package frc.robot.commands;
 
+import java.util.OptionalDouble;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -43,15 +45,14 @@ public class AimWhileDrivingCommand extends Command {
     double rotationInputFallback = -MathUtil.applyDeadband(m_controller.getRightX(), OIConstants.kDriveDeadband);
 
     double rotation;
-    if (m_vision.canSeeHopper()) {
-      double hopperYaw = m_vision.getHopperYaw();
-      double currentHeading = m_drive.getHeading();
-      double targetHeading = currentHeading + hopperYaw; // Positive yaw = target to the right
-      rotation = m_rotationPID.calculate(currentHeading, targetHeading);
+    double currentHeading = m_drive.getPose().getRotation().getDegrees();
+    OptionalDouble targetHeading = m_vision.getHopperTargetHeadingDegrees(m_drive.getPose());
+    if (targetHeading.isPresent()) {
+      rotation = m_rotationPID.calculate(currentHeading, targetHeading.getAsDouble());
       // Clamp to [-1,1]
       rotation = Math.max(-1.0, Math.min(1.0, rotation));
     } else {
-      // Fallback to driver rotation if no target
+      // Fallback only if tag ID is missing from field layout
       rotation = rotationInputFallback;
     }
 

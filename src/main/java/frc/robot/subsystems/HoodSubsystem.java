@@ -10,15 +10,19 @@ import com.revrobotics.PersistMode;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
+import java.util.function.DoubleSupplier;
 
 @Logged
 public class HoodSubsystem extends SubsystemBase {
   private final SparkMax m_hoodMotor;
   private final RelativeEncoder m_hoodEncoder;
   private final SparkClosedLoopController m_hoodPID;
+  private final InterpolatingDoubleTreeMap m_distanceToAngleMap = new InterpolatingDoubleTreeMap();
+  @Logged private double autoTargetAngleDegrees = 0.0;
 
   /** Creates a new HoodSubsystem. */
   public HoodSubsystem() {
@@ -29,6 +33,11 @@ public class HoodSubsystem extends SubsystemBase {
 
     m_hoodEncoder = m_hoodMotor.getEncoder();
     m_hoodPID = m_hoodMotor.getClosedLoopController();
+
+    int pairCount = Math.min(ShooterConstants.kHoodDistanceMeters.length, ShooterConstants.kHoodAngleDegrees.length);
+    for (int i = 0; i < pairCount; i++) {
+      m_distanceToAngleMap.put(ShooterConstants.kHoodDistanceMeters[i], ShooterConstants.kHoodAngleDegrees[i]);
+    }
   }
 
   @Override
@@ -45,6 +54,7 @@ public class HoodSubsystem extends SubsystemBase {
         ShooterConstants.kMinHoodAngleDegrees, 
         ShooterConstants.kMaxHoodAngleDegrees);
   m_hoodPID.setSetpoint(clampedAngle, ControlType.kPosition);
+  autoTargetAngleDegrees = clampedAngle;
   }
 
   /**
@@ -81,5 +91,25 @@ public class HoodSubsystem extends SubsystemBase {
         () -> setHoodAngle(angleDegrees),
         this::stop
     );
+  }
+
+  /**
+   * Returns an interpolated hood angle for the requested distance.
+   */
+  public double getAutoHoodAngleForDistance(double distanceMeters) {
+    if (m_distanceToAngleMap.size() == 0) {
+      return ShooterConstants.kMinHoodAngleDegrees;
+    }
+    return m_distanceToAngleMap.get(distanceMeters);
+  }
+
+  /**
+   * Continuously updates hood setpoint from a distance supplier.
+   */
+  public Command autoHoodFromDistanceCommand(DoubleSupplier distanceMetersSupplier) {
+    return this.run(() -> {
+      double distance = distanceMetersSupplier.getAsDouble();
+      setHoodAngle(getAutoHoodAngleForDistance(distance));
+    });
   }
 }

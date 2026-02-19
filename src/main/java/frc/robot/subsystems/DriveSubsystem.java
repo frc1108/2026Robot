@@ -67,6 +67,9 @@ public class DriveSubsystem extends SubsystemBase {
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_MaxSwerve);
   }
 
+  // Exposed to Advantage Scope via @Logged so you can see the current fused pose
+  @Logged public edu.wpi.first.math.geometry.Pose2d loggedPose = new edu.wpi.first.math.geometry.Pose2d();
+
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
@@ -79,6 +82,8 @@ public class DriveSubsystem extends SubsystemBase {
             m_rearLeft.getPosition(),
             m_rearRight.getPosition()
         });
+    // Update logged pose for Advantage Scope
+    loggedPose = m_poseEstimator.getEstimatedPosition();
   }
 
   /**
@@ -105,6 +110,8 @@ public class DriveSubsystem extends SubsystemBase {
             m_rearRight.getPosition()
         },
         pose);
+    // Keep logged pose in sync
+    loggedPose = pose;
   }
 
   /**
@@ -192,6 +199,8 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public void addVisionMeasurement(Pose2d estimatedPose, double timestampSeconds) {
     m_poseEstimator.addVisionMeasurement(estimatedPose, timestampSeconds);
+    // Also update logged pose so Advantage Scope sees the incoming vision measurement
+    loggedPose = estimatedPose;
   }
 
   // /**

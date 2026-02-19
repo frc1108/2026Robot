@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
 
 import org.photonvision.EstimatedRobotPose;
@@ -20,9 +21,13 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.NotLogged;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.VisionConstants;
 
@@ -34,6 +39,10 @@ public class VisionSubsystem extends SubsystemBase {
   private final BiConsumer<Pose2d, Double> consumer;
   @NotLogged private final DriveSubsystem drive;
   private Pose3d estimated3dPose;
+  // Per-camera estimated poses (exposed to Advantage Scope via @Logged)
+  @Logged private Pose3d leftEstimated3dPose = new Pose3d();
+  @Logged private Pose3d rightEstimated3dPose = new Pose3d();
+  @Logged private String lastEstimatorCameraName = "";
   
   // Hopper targeting data for Advantage Scope logging
   @Logged private double hopperYaw = 0.0;
@@ -54,6 +63,8 @@ public class VisionSubsystem extends SubsystemBase {
     PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
     cameraOffset));
   estimated3dPose = new Pose3d();
+  leftEstimated3dPose = new Pose3d();
+  rightEstimated3dPose = new Pose3d();
   this.consumer = consumer;
   this.drive = drive;
   }
@@ -64,6 +75,8 @@ public class VisionSubsystem extends SubsystemBase {
   this.consumer = consumer;
   this.drive = drive;
   estimated3dPose = new Pose3d();
+  leftEstimated3dPose = new Pose3d();
+  rightEstimated3dPose = new Pose3d();
 
   // Left camera
   Transform3d leftOffset = new Transform3d(
@@ -137,6 +150,14 @@ public class VisionSubsystem extends SubsystemBase {
         estimated3dPose = estimatedPose.estimatedPose;
         // Publish to drive odometry (WPILib pose estimator will fuse it)
         consumer.accept(estimatedPose.estimatedPose.toPose2d(), estimatedPose.timestampSeconds);
+        // Store per-camera estimated pose for diagnostics
+        String camName = cam.getName();
+        lastEstimatorCameraName = camName;
+        if (i == 0) {
+          leftEstimated3dPose = estimatedPose.estimatedPose;
+        } else if (i == 1) {
+          rightEstimated3dPose = estimatedPose.estimatedPose;
+        }
       }
 
       // Check for hopper tag detections in this camera's result and keep the best one
@@ -244,10 +265,76 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
+   * Computes a field-absolute robot heading that aligns the shooter's bore axis with the
+   * hopper center. This accounts for shooter position offset on the robot and shooter yaw
+   * offset relative to robot forward.
+   *
+   * @param robotPose Current fused robot pose (typically DriveSubsystem#getPose()).
+   * @return heading in degrees (-180, 180], or empty if the field layout does not
+   *         contain the hopper tag.
+   */
+  public OptionalDouble getHopperTargetHeadingDegrees(Pose2d robotPose) {
+    var hopperTagPose = fieldLayout.getTagPose(VisionConstants.kHopperTagId);
+    if (hopperTagPose.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+
+    Pose2d hopperCenterPose = hopperTagPose.get().toPose2d().transformBy(
+        new Transform2d(
+            VisionConstants.kHopperCenterOffsetForwardMeters,
+            VisionConstants.kHopperCenterOffsetLeftMeters,
+            Rotation2d.kZero));
+
+    // Shooter location in field coordinates for current robot pose
+    Translation2d shooterOffsetRobot = new Translation2d(
+        VisionConstants.kShooterOffsetForwardMeters,
+        VisionConstants.kShooterOffsetLeftMeters);
+    Translation2d shooterPositionField = robotPose.getTranslation().plus(
+        shooterOffsetRobot.rotateBy(robotPose.getRotation()));
+
+    // Desired line from shooter to hopper center in field coordinates
+    double lineToHopperDeg = Math.toDegrees(Math.atan2(
+        hopperCenterPose.getY() - shooterPositionField.getY(),
+        hopperCenterPose.getX() - shooterPositionField.getX()));
+
+    // Shooter bore axis currently points at robotHeading + shooterYawOffset
+    double shooterFacingDeg =
+        robotPose.getRotation().getDegrees() + VisionConstants.kShooterYawOffsetDegrees;
+    double shooterAimErrorDeg =
+        MathUtil.inputModulus(lineToHopperDeg - shooterFacingDeg, -180.0, 180.0);
+
+    // Convert shooter-axis error back to the robot heading setpoint
+    double targetRobotHeadingDeg = MathUtil.inputModulus(
+        robotPose.getRotation().getDegrees() + shooterAimErrorDeg, -180.0, 180.0);
+    return OptionalDouble.of(targetRobotHeadingDeg);
+  }
+
+  /**
    * Get the estimated 3D pose of the robot
    * @return Pose3d
    */
   public Pose3d getEstimated3dPose() {
     return estimated3dPose;
+  }
+
+  /**
+   * Get the latest estimated pose produced by the left camera's pose estimator
+   */
+  public Pose3d getLeftEstimated3dPose() {
+    return leftEstimated3dPose;
+  }
+
+  /**
+   * Get the latest estimated pose produced by the right camera's pose estimator
+   */
+  public Pose3d getRightEstimated3dPose() {
+    return rightEstimated3dPose;
+  }
+
+  /**
+   * Returns the name of the camera that produced the last estimator result
+   */
+  public String getLastEstimatorCameraName() {
+    return lastEstimatorCameraName;
   }
 }
