@@ -64,7 +64,7 @@ public class RobotContainer {
 
   private void configureButtonBindings() {
     if (m_vision != null) {
-      m_driverController.a().whileTrue(new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
+      m_driverController.rightBumper().whileTrue(new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
     }
 
     if (m_vision != null) {
@@ -72,13 +72,13 @@ public class RobotContainer {
           m_shooter.shootCommand(),
           m_hood.autoHoodFromDistanceCommand(
               () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(2.5))));
-      m_driverController.rightBumper().whileTrue(Commands.parallel(
-          m_shooter.slowShootCommand(),
-          m_hood.autoHoodFromDistanceCommand(
-              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(2.5))));
+      //m_driverController.rightBumper().whileTrue(Commands.parallel(
+          //m_shooter.slowShootCommand(),
+          //m_hood.autoHoodFromDistanceCommand(
+              //() -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(2.5))));
     } else {
       m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());
-      m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
+      //m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
     }
 
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
@@ -86,9 +86,8 @@ public class RobotContainer {
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
     m_driverController.y().whileTrue(m_tomb.tomb());
-
-    m_driverController.x().onTrue(m_hood.setHoodAngleCommand(15.0));
-    m_driverController.b().onTrue(m_hood.setHoodAngleCommand(30.0));
+    //m_driverController.x().onTrue(m_hood.setHoodAngleCommand(15.0));
+    //m_driverController.b().onTrue(m_hood.setHoodAngleCommand(30.0));
   }
 
   public Command getAutonomousCommand() {
