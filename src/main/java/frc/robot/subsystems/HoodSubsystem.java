@@ -22,6 +22,7 @@ public class HoodSubsystem extends SubsystemBase {
   private final RelativeEncoder m_hoodEncoder;
   private final SparkClosedLoopController m_hoodPID;
   private final InterpolatingDoubleTreeMap m_distanceToAngleMap = new InterpolatingDoubleTreeMap();
+  private final int m_tablePairCount;
   @Logged private double autoTargetAngleDegrees = 0.0;
 
   /** Creates a new HoodSubsystem. */
@@ -34,8 +35,8 @@ public class HoodSubsystem extends SubsystemBase {
     m_hoodEncoder = m_hoodMotor.getEncoder();
     m_hoodPID = m_hoodMotor.getClosedLoopController();
 
-    int pairCount = Math.min(ShooterConstants.kHoodDistanceMeters.length, ShooterConstants.kHoodAngleDegrees.length);
-    for (int i = 0; i < pairCount; i++) {
+    m_tablePairCount = Math.min(ShooterConstants.kHoodDistanceMeters.length, ShooterConstants.kHoodAngleDegrees.length);
+    for (int i = 0; i < m_tablePairCount; i++) {
       m_distanceToAngleMap.put(ShooterConstants.kHoodDistanceMeters[i], ShooterConstants.kHoodAngleDegrees[i]);
     }
   }
@@ -97,7 +98,7 @@ public class HoodSubsystem extends SubsystemBase {
    * Returns an interpolated hood angle for the requested distance.
    */
   public double getAutoHoodAngleForDistance(double distanceMeters) {
-    if (m_distanceToAngleMap.size() == 0) {
+    if (m_tablePairCount == 0) {
       return ShooterConstants.kMinHoodAngleDegrees;
     }
     return m_distanceToAngleMap.get(distanceMeters);

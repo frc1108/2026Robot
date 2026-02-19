@@ -310,6 +310,27 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
+   * Computes planar distance from robot center to hopper center from field geometry.
+   *
+   * @param robotPose Current fused robot pose.
+   * @return distance in meters, or empty if hopper tag id is missing from field layout.
+   */
+  public OptionalDouble getHopperCenterDistanceMeters(Pose2d robotPose) {
+    var hopperTagPose = fieldLayout.getTagPose(VisionConstants.kHopperTagId);
+    if (hopperTagPose.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+
+    Pose2d hopperCenterPose = hopperTagPose.get().toPose2d().transformBy(
+        new Transform2d(
+            VisionConstants.kHopperCenterOffsetForwardMeters,
+            VisionConstants.kHopperCenterOffsetLeftMeters,
+            Rotation2d.kZero));
+
+    return OptionalDouble.of(robotPose.getTranslation().getDistance(hopperCenterPose.getTranslation()));
+  }
+
+  /**
    * Get the estimated 3D pose of the robot
    * @return Pose3d
    */

@@ -29,8 +29,8 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.TombSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.commands.AimAtHopperCommand;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
@@ -111,18 +111,26 @@ public class RobotContainer {
 
     // Vision/Aiming
     if (m_vision != null) {
-      // Replace AimAtHopper on A with a simple snap-to-angle 0 while held
-      //m_driverController.a().whileTrue(new frc.robot.commands.SnapToAngleCommand(m_robotDrive));
-
-      // While POV Right is held, drive while actively aiming at the hopper
+      // Hold A to drive while actively aiming at the hopper
       m_driverController.a().whileTrue(new frc.robot.commands.AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
     }
 
     // (calibration command removed) Start button binding intentionally left empty
     
     // Shooting
-    m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());
-    m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
+    if (m_vision != null) {
+      m_driverController.rightTrigger().whileTrue(Commands.parallel(
+          m_shooter.shootCommand(),
+          m_hood.autoHoodFromDistanceCommand(
+              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(2.5))));
+      m_driverController.rightBumper().whileTrue(Commands.parallel(
+          m_shooter.slowShootCommand(),
+          m_hood.autoHoodFromDistanceCommand(
+              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(2.5))));
+    } else {
+      m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());
+      m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
+    }
     
     // Intake
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
