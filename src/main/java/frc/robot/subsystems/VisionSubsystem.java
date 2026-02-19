@@ -101,6 +101,22 @@ public class VisionSubsystem extends SubsystemBase {
         m_fieldLayout,
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
         rightOffset));
+
+    // Front camera (commented out for now).
+    // Transform3d frontOffset = new Transform3d(
+    //     new Translation3d(
+    //         VisionConstants.kFrontCameraOffsetX,
+    //         VisionConstants.kFrontCameraOffsetY,
+    //         VisionConstants.kFrontCameraOffsetZ),
+    //     new Rotation3d(
+    //         VisionConstants.kFrontCameraRotX,
+    //         VisionConstants.kFrontCameraRotY,
+    //         VisionConstants.kFrontCameraRotZ));
+    // m_photonCameras.add(new PhotonCamera(VisionConstants.kFrontCameraName));
+    // m_poseEstimators.add(new PhotonPoseEstimator(
+    //     m_fieldLayout,
+    //     PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    //     frontOffset));
   }
 
   @Override

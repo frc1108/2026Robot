@@ -128,6 +128,7 @@ public final class Constants {
   public static final class VisionConstants {
     public static final String kLeftCameraName = "LeftSideCamera";
     public static final String kRightCameraName = "RightSideCamera";
+    // public static final String kFrontCameraName = "FrontSideCamera";
 
     public static final int kHopperTagId = 26;
     public static final double kHopperCenterOffsetForwardMeters = -0.305;
@@ -137,12 +138,12 @@ public final class Constants {
     public static final double kShooterOffsetLeftMeters = 0.2;
     public static final double kShooterYawOffsetDegrees = 90.0;
 
-    public static final double kLeftCameraOffsetX = 0.0;
-    public static final double kLeftCameraOffsetY = 0.368;
-    public static final double kLeftCameraOffsetZ = 0.711;
-    public static final double kLeftCameraRotX = 0.0;
-    public static final double kLeftCameraRotY = 0.0;
-    public static final double kLeftCameraRotZ = 1.5708;
+    public static final double kLeftCameraOffsetX = 0.0;   //Front 
+    public static final double kLeftCameraOffsetY = 0.368; //Side Left+
+    public static final double kLeftCameraOffsetZ = 0.711; //Height Up+
+    public static final double kLeftCameraRotX = 0.0;      //
+    public static final double kLeftCameraRotY = 0.0;      //
+    public static final double kLeftCameraRotZ = 1.5708;   //Yaw CCW+
 
     public static final double kRightCameraOffsetX = 0.0;
     public static final double kRightCameraOffsetY = -0.368;
@@ -150,6 +151,14 @@ public final class Constants {
     public static final double kRightCameraRotX = 0.0;
     public static final double kRightCameraRotY = 0.0;
     public static final double kRightCameraRotZ = -1.5708;
+
+    // Front camera (commented out for now).
+    // public static final double kFrontCameraOffsetX = 0.0;
+    // public static final double kFrontCameraOffsetY = 0.0;
+    // public static final double kFrontCameraOffsetZ = 0.711;
+    // public static final double kFrontCameraRotX = 0.0;
+    // public static final double kFrontCameraRotY = 0.0;
+    // public static final double kFrontCameraRotZ = 0.0;
 
     public static final double kMaxDistanceMeters = 10.0;
     public static final double kMaxAmbiguity = 0.35;
