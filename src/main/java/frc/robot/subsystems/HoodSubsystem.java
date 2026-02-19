@@ -11,6 +11,7 @@ import com.revrobotics.PersistMode;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
@@ -18,7 +19,6 @@ import java.util.function.DoubleSupplier;
 
 @Logged
 public class HoodSubsystem extends SubsystemBase {
-  private static final double kLoopPeriodSeconds = 0.02;
   private final SparkMax m_hoodMotor;
   private final RelativeEncoder m_hoodEncoder;
   private final SparkClosedLoopController m_hoodPID;
@@ -26,6 +26,7 @@ public class HoodSubsystem extends SubsystemBase {
   private final int m_tablePairCount;
   private double m_filteredDistanceMeters = Double.NaN;
   private double m_lastAutoCommandAngleDegrees = Double.NaN;
+  private double m_lastAutoUpdateTimestampSec = Double.NaN;
   @Logged private double autoTargetAngleDegrees = 0.0;
 
   /** Creates a new HoodSubsystem. */
@@ -69,8 +70,11 @@ public class HoodSubsystem extends SubsystemBase {
     double clampedAngle = MathUtil.clamp(angleDegrees, 
         ShooterConstants.kMinHoodAngleDegrees, 
         ShooterConstants.kMaxHoodAngleDegrees);
-  m_hoodPID.setSetpoint(clampedAngle, ControlType.kPosition);
-  autoTargetAngleDegrees = clampedAngle;
+    if (Math.abs(clampedAngle - autoTargetAngleDegrees) < ShooterConstants.kHoodCommandToleranceDegrees) {
+      return;
+    }
+    m_hoodPID.setSetpoint(clampedAngle, ControlType.kPosition);
+    autoTargetAngleDegrees = clampedAngle;
   }
 
   /**
@@ -124,6 +128,16 @@ public class HoodSubsystem extends SubsystemBase {
    */
   public Command autoHoodFromDistanceCommand(DoubleSupplier distanceMetersSupplier) {
     return this.run(() -> {
+      double nowSec = Timer.getFPGATimestamp();
+      if (!Double.isNaN(m_lastAutoUpdateTimestampSec)
+          && (nowSec - m_lastAutoUpdateTimestampSec) < ShooterConstants.kAutoHoodUpdatePeriodSeconds) {
+        return;
+      }
+      double dtSec = Double.isNaN(m_lastAutoUpdateTimestampSec)
+          ? ShooterConstants.kAutoHoodUpdatePeriodSeconds
+          : (nowSec - m_lastAutoUpdateTimestampSec);
+      m_lastAutoUpdateTimestampSec = nowSec;
+
       double rawDistance = distanceMetersSupplier.getAsDouble();
 
       if (Double.isNaN(m_filteredDistanceMeters)) {
@@ -140,7 +154,7 @@ public class HoodSubsystem extends SubsystemBase {
         m_lastAutoCommandAngleDegrees = getHoodAngle();
       }
 
-      double maxStep = ShooterConstants.kAutoHoodAngleSlewRateDegPerSec * kLoopPeriodSeconds;
+      double maxStep = ShooterConstants.kAutoHoodAngleSlewRateDegPerSec * dtSec;
       double limitedAngle = m_lastAutoCommandAngleDegrees
           + MathUtil.clamp(desiredAngle - m_lastAutoCommandAngleDegrees, -maxStep, maxStep);
 
@@ -151,6 +165,7 @@ public class HoodSubsystem extends SubsystemBase {
     }).beforeStarting(() -> {
       m_filteredDistanceMeters = Double.NaN;
       m_lastAutoCommandAngleDegrees = Double.NaN;
+      m_lastAutoUpdateTimestampSec = Double.NaN;
     });
   }
 }

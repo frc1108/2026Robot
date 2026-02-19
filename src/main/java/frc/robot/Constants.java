@@ -142,9 +142,11 @@ public final class Constants {
     public static final double kMaxHoodAngleDegrees = 45.0;
     
     // PID constants for hood control
-    public static final double kHoodP = 0.5;
+    public static final double kHoodP = 0.25;
     public static final double kHoodI = 0.0;
-    public static final double kHoodD = 0.1;
+    public static final double kHoodD = 0.0;
+    public static final double kHoodMaxClosedLoopOutput = 0.35;
+    public static final double kHoodCommandToleranceDegrees = 0.5;
 
     // Internal hood encoder startup zeroing.
     // Set this true to automatically set encoder position on robot boot.
@@ -162,10 +164,11 @@ public final class Constants {
     public static final double[] kHoodAngleDegrees = {34.0, 28.0, 22.0, 17.0};
 
     // Auto-hood stabilizing filters for noisy distance estimates.
-    public static final double kAutoHoodDistanceFilterAlpha = 0.2; // 0..1, higher = faster response
-    public static final double kAutoHoodDistanceDeadbandMeters = 0.03;
-    public static final double kAutoHoodAngleSlewRateDegPerSec = 35.0;
-    public static final double kAutoHoodMinCommandStepDeg = 0.1;
+    public static final double kAutoHoodDistanceFilterAlpha = 0.1; // 0..1, higher = faster response
+    public static final double kAutoHoodDistanceDeadbandMeters = 0.05;
+    public static final double kAutoHoodAngleSlewRateDegPerSec = 20.0;
+    public static final double kAutoHoodMinCommandStepDeg = 0.4;
+    public static final double kAutoHoodUpdatePeriodSeconds = 0.12;
   }
 
   public static final class VisionConstants {

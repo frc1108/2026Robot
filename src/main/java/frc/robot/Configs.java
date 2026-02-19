@@ -85,7 +85,8 @@ public final class Configs {
                         // Closed-loop PID for hood
                         hoodConfig.closedLoop
                                 .pid(Constants.ShooterConstants.kHoodP, Constants.ShooterConstants.kHoodI, Constants.ShooterConstants.kHoodD)
-                                .outputRange(-1.0, 1.0);
+                                .outputRange(-Constants.ShooterConstants.kHoodMaxClosedLoopOutput,
+                                        Constants.ShooterConstants.kHoodMaxClosedLoopOutput);
 
                         // Use brake idle for hood motor
                         hoodConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(20).voltageCompensation(10);
