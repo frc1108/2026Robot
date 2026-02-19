@@ -4,20 +4,17 @@
 
 package frc.robot;
 
-import java.util.List;
+import java.util.Optional;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.Trajectory;
-import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.commands.AimWhileDrivingCommand;
 import frc.robot.commands.FollowFuelCommand;
@@ -30,7 +27,6 @@ import frc.robot.subsystems.VisionSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 @Logged
 public class RobotContainer {
@@ -40,6 +36,8 @@ public class RobotContainer {
   private final IntakeSubsystem m_intake = new IntakeSubsystem();
   private final TombSubsystem m_tomb = new TombSubsystem();
   private VisionSubsystem m_vision;
+  private boolean m_autoAimAtHopperEnabled = false;
+  private SendableChooser<Command> m_autoChooser;
   private final CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
   public RobotContainer() {
@@ -51,6 +49,8 @@ public class RobotContainer {
     }
 
     m_shooter.setHoodSubsystem(m_hood);
+    configurePathPlannerNamedCommands();
+    configureAutoChooser();
     configureButtonBindings();
 
     m_robotDrive.setDefaultCommand(
@@ -61,6 +61,34 @@ public class RobotContainer {
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
                 true),
             m_robotDrive));
+  }
+
+  private void configureAutoChooser() {
+    m_autoChooser = AutoBuilder.buildAutoChooser("Hopper Test");
+    Shuffleboard.getTab("Autonomous")
+        .add("Auto Chooser", m_autoChooser)
+        .withPosition(0, 0)
+        .withSize(5, 2);
+  }
+
+  private void configurePathPlannerNamedCommands() {
+    NamedCommands.registerCommand(
+        "AimAtHopperOn",
+        Commands.runOnce(() -> m_autoAimAtHopperEnabled = true));
+    NamedCommands.registerCommand(
+        "AimAtHopperOff",
+        Commands.runOnce(() -> m_autoAimAtHopperEnabled = false));
+
+    PPHolonomicDriveController.setRotationTargetOverride(() -> {
+      if (!m_autoAimAtHopperEnabled || m_vision == null) {
+        return Optional.empty();
+      }
+
+      return m_vision.getHopperTargetHeadingDegrees(m_robotDrive.getPose())
+          .stream()
+          .mapToObj(Rotation2d::fromDegrees)
+          .findFirst();
+    });
   }
 
   private void configureButtonBindings() {
@@ -100,32 +128,9 @@ public class RobotContainer {
           .withTimeout(AutoConstants.kFuelAutoTimeoutSeconds);
     }
 
-    TrajectoryConfig config = new TrajectoryConfig(
-        AutoConstants.kMaxSpeedMetersPerSecond,
-        AutoConstants.kMaxAccelerationMetersPerSecondSquared)
-        .setKinematics(DriveConstants.kDriveKinematics);
-
-    Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
-        new Pose2d(0, 0, new Rotation2d(0)),
-        List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
-        new Pose2d(3, 0, new Rotation2d(0)),
-        config);
-
-    var thetaController = new ProfiledPIDController(
-        AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
-    thetaController.enableContinuousInput(-Math.PI, Math.PI);
-
-    SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
-        exampleTrajectory,
-        m_robotDrive::getPose,
-        DriveConstants.kDriveKinematics,
-        new PIDController(AutoConstants.kPXController, 0, 0),
-        new PIDController(AutoConstants.kPYController, 0, 0),
-        thetaController,
-        m_robotDrive::setModuleStates,
-        m_robotDrive);
-
-    m_robotDrive.resetOdometry(exampleTrajectory.getInitialPose());
-    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, false));
+    if (m_autoChooser != null && m_autoChooser.getSelected() != null) {
+      return m_autoChooser.getSelected();
+    }
+    return Commands.none();
   }
 }

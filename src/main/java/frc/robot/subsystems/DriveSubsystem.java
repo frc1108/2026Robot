@@ -4,10 +4,17 @@
 
 package frc.robot.subsystems;
 
+import java.io.IOException;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -65,6 +72,7 @@ public class DriveSubsystem extends SubsystemBase {
   public DriveSubsystem() {
     // Usage reporting for MAXSwerve template
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_MaxSwerve);
+    configurePathPlanner();
   }
 
   // Exposed to Advantage Scope via @Logged so you can see the current fused pose
@@ -167,6 +175,19 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearRight.setDesiredState(desiredStates[3]);
   }
 
+  public ChassisSpeeds getRobotRelativeSpeeds() {
+    return DriveConstants.kDriveKinematics.toChassisSpeeds(
+        m_frontLeft.getState(),
+        m_frontRight.getState(),
+        m_rearLeft.getState(),
+        m_rearRight.getState());
+  }
+
+  public void driveRobotRelative(ChassisSpeeds speeds) {
+    SwerveModuleState[] desiredStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
+    setModuleStates(desiredStates);
+  }
+
   /** Resets the drive encoders to currently read a position of 0. */
   public void resetEncoders() {
     m_frontLeft.resetEncoders();
@@ -201,6 +222,27 @@ public class DriveSubsystem extends SubsystemBase {
     m_poseEstimator.addVisionMeasurement(estimatedPose, timestampSeconds);
     // Also update logged pose so Advantage Scope sees the incoming vision measurement
     loggedPose = estimatedPose;
+  }
+
+  private void configurePathPlanner() {
+    try {
+      RobotConfig config = RobotConfig.fromGUISettings();
+      AutoBuilder.configure(
+          this::getPose,
+          this::resetOdometry,
+          this::getRobotRelativeSpeeds,
+          this::driveRobotRelative,
+          new PPHolonomicDriveController(
+              new PIDConstants(5.0, 0.0, 0.0),
+              new PIDConstants(5.0, 0.0, 0.0)),
+          config,
+          () -> DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red,
+          this);
+    } catch (IOException e) {
+      DriverStation.reportError("Failed to load PathPlanner RobotConfig from GUI settings", e.getStackTrace());
+    } catch (Exception e) {
+      DriverStation.reportError("Failed to configure PathPlanner AutoBuilder", e.getStackTrace());
+    }
   }
 
   // /**
