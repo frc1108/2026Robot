@@ -201,9 +201,9 @@ public final class Constants {
 
     // Fuel heatmap (Shuffleboard Field2d overlay):
     // grid resolution in field cells.
-    public static final int kFuelHeatmapCellsX = 24;
-    public static final int kFuelHeatmapCellsY = 12;
-    // Requested Shuffleboard field background name for the heatmap widget.
+    public static final int kFuelHeatmapCellsX = 36;
+    public static final int kFuelHeatmapCellsY = 18;
+    // Requested field image/background name for Field2d widgets.
     public static final String kFuelHeatmapFieldBackground = "2026RebuiltWelded";
     // How quickly old cells fade each second (0=no decay, 1=full clear every second).
     public static final double kFuelHeatmapDecayPerSecond = 0.35;
