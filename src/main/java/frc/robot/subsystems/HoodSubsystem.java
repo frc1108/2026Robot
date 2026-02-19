@@ -18,11 +18,14 @@ import java.util.function.DoubleSupplier;
 
 @Logged
 public class HoodSubsystem extends SubsystemBase {
+  private static final double kLoopPeriodSeconds = 0.02;
   private final SparkMax m_hoodMotor;
   private final RelativeEncoder m_hoodEncoder;
   private final SparkClosedLoopController m_hoodPID;
   private final InterpolatingDoubleTreeMap m_distanceToAngleMap = new InterpolatingDoubleTreeMap();
   private final int m_tablePairCount;
+  private double m_filteredDistanceMeters = Double.NaN;
+  private double m_lastAutoCommandAngleDegrees = Double.NaN;
   @Logged private double autoTargetAngleDegrees = 0.0;
 
   /** Creates a new HoodSubsystem. */
@@ -35,10 +38,22 @@ public class HoodSubsystem extends SubsystemBase {
     m_hoodEncoder = m_hoodMotor.getEncoder();
     m_hoodPID = m_hoodMotor.getClosedLoopController();
 
+    if (ShooterConstants.kAutoZeroHoodOnStartup) {
+      zeroInternalEncoder(ShooterConstants.kHoodStartupZeroDegrees);
+    }
+
     m_tablePairCount = Math.min(ShooterConstants.kHoodDistanceMeters.length, ShooterConstants.kHoodAngleDegrees.length);
     for (int i = 0; i < m_tablePairCount; i++) {
       m_distanceToAngleMap.put(ShooterConstants.kHoodDistanceMeters[i], ShooterConstants.kHoodAngleDegrees[i]);
     }
+  }
+
+  /**
+   * Sets the internal relative encoder position to a known hood angle.
+   */
+  public void zeroInternalEncoder(double knownAngleDegrees) {
+    m_hoodEncoder.setPosition(knownAngleDegrees);
+    autoTargetAngleDegrees = knownAngleDegrees;
   }
 
   @Override
@@ -109,8 +124,33 @@ public class HoodSubsystem extends SubsystemBase {
    */
   public Command autoHoodFromDistanceCommand(DoubleSupplier distanceMetersSupplier) {
     return this.run(() -> {
-      double distance = distanceMetersSupplier.getAsDouble();
-      setHoodAngle(getAutoHoodAngleForDistance(distance));
+      double rawDistance = distanceMetersSupplier.getAsDouble();
+
+      if (Double.isNaN(m_filteredDistanceMeters)) {
+        m_filteredDistanceMeters = rawDistance;
+      } else {
+        double delta = rawDistance - m_filteredDistanceMeters;
+        if (Math.abs(delta) > ShooterConstants.kAutoHoodDistanceDeadbandMeters) {
+          m_filteredDistanceMeters += ShooterConstants.kAutoHoodDistanceFilterAlpha * delta;
+        }
+      }
+
+      double desiredAngle = getAutoHoodAngleForDistance(m_filteredDistanceMeters);
+      if (Double.isNaN(m_lastAutoCommandAngleDegrees)) {
+        m_lastAutoCommandAngleDegrees = getHoodAngle();
+      }
+
+      double maxStep = ShooterConstants.kAutoHoodAngleSlewRateDegPerSec * kLoopPeriodSeconds;
+      double limitedAngle = m_lastAutoCommandAngleDegrees
+          + MathUtil.clamp(desiredAngle - m_lastAutoCommandAngleDegrees, -maxStep, maxStep);
+
+      if (Math.abs(limitedAngle - m_lastAutoCommandAngleDegrees) >= ShooterConstants.kAutoHoodMinCommandStepDeg) {
+        setHoodAngle(limitedAngle);
+        m_lastAutoCommandAngleDegrees = limitedAngle;
+      }
+    }).beforeStarting(() -> {
+      m_filteredDistanceMeters = Double.NaN;
+      m_lastAutoCommandAngleDegrees = Double.NaN;
     });
   }
 }

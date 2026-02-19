@@ -145,6 +145,12 @@ public final class Constants {
     public static final double kHoodP = 0.5;
     public static final double kHoodI = 0.0;
     public static final double kHoodD = 0.1;
+
+    // Internal hood encoder startup zeroing.
+    // Set this true to automatically set encoder position on robot boot.
+    public static final boolean kAutoZeroHoodOnStartup = true;
+    // Encoder angle to assign at boot (usually your mechanical home/stow angle).
+    public static final double kHoodStartupZeroDegrees = 0.0;
     
     // Shooter speed presets
     public static final double kShooterFullSpeed = 0.90;
@@ -154,6 +160,12 @@ public final class Constants {
     // Replace these with measured shot data from your robot.
     public static final double[] kHoodDistanceMeters = {1.5, 2.5, 3.5, 4.5};
     public static final double[] kHoodAngleDegrees = {34.0, 28.0, 22.0, 17.0};
+
+    // Auto-hood stabilizing filters for noisy distance estimates.
+    public static final double kAutoHoodDistanceFilterAlpha = 0.2; // 0..1, higher = faster response
+    public static final double kAutoHoodDistanceDeadbandMeters = 0.03;
+    public static final double kAutoHoodAngleSlewRateDegPerSec = 35.0;
+    public static final double kAutoHoodMinCommandStepDeg = 0.1;
   }
 
   public static final class VisionConstants {
