@@ -220,5 +220,13 @@ public final class Constants {
     // Tolerance for aiming (degrees)
     public static final double kAimingToleranceDegrees = 2.0;
     public static final double kAimingTimeoutSeconds = 2.0;
+
+    // While-driving shot compensation.
+    // Effective ball exit speed (m/s) used to compute inertial lead while moving.
+    public static final double kBallExitSpeedMetersPerSecond = 9.0;
+    // Overall gain for tuning lead amount without changing the assumed ball speed.
+    public static final double kShotLeadGain = 1.0;
+    // Clamp so compensation cannot over-rotate due to noisy velocity estimates.
+    public static final double kMaxShotLeadDegrees = 12.0;
   }
 }

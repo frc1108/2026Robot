@@ -3,8 +3,10 @@ package frc.robot.commands;
 import java.util.OptionalDouble;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.VisionConstants;
@@ -48,7 +50,29 @@ public class AimWhileDrivingCommand extends Command {
     double currentHeading = m_drive.getPose().getRotation().getDegrees();
     OptionalDouble targetHeading = m_vision.getHopperTargetHeadingDegrees(m_drive.getPose());
     if (targetHeading.isPresent()) {
-      rotation = m_rotationPID.calculate(currentHeading, targetHeading.getAsDouble());
+      // Estimate field-relative translation velocity from current drive command.
+      double vxField = xSpeed * DriveConstants.kMaxSpeedMetersPerSecond;
+      double vyField = ySpeed * DriveConstants.kMaxSpeedMetersPerSecond;
+
+      // Shooter axis in field frame when at stationary target heading.
+      double stationaryShooterAxisDeg =
+          targetHeading.getAsDouble() + VisionConstants.kShooterYawOffsetDegrees;
+      Rotation2d shooterAxis = Rotation2d.fromDegrees(stationaryShooterAxisDeg);
+
+      // Lateral velocity component (left of shot axis positive).
+      double vPerpMetersPerSec = (-shooterAxis.getSin() * vxField) + (shooterAxis.getCos() * vyField);
+
+      // Ball inherits robot lateral velocity; aim against it.
+      double leadDegrees = Math.toDegrees(Math.atan2(
+          VisionConstants.kShotLeadGain * vPerpMetersPerSec,
+          VisionConstants.kBallExitSpeedMetersPerSecond));
+      leadDegrees = MathUtil.clamp(
+          leadDegrees, -VisionConstants.kMaxShotLeadDegrees, VisionConstants.kMaxShotLeadDegrees);
+
+      double compensatedTargetHeading = targetHeading.getAsDouble() - leadDegrees;
+      compensatedTargetHeading = MathUtil.inputModulus(compensatedTargetHeading, -180.0, 180.0);
+
+      rotation = m_rotationPID.calculate(currentHeading, compensatedTargetHeading);
       // Clamp to [-1,1]
       rotation = Math.max(-1.0, Math.min(1.0, rotation));
     } else {
