@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
@@ -25,11 +26,15 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.VisionConstants;
 
@@ -44,12 +49,22 @@ public class VisionSubsystem extends SubsystemBase {
   @Logged private Pose3d leftEstimated3dPose = new Pose3d();
   @Logged private Pose3d rightEstimated3dPose = new Pose3d();
   @Logged private String lastEstimatorCameraName = "";
+  private final PhotonCamera m_fuelCamera = new PhotonCamera(VisionConstants.kFuelCameraName);
 
   @Logged private double hopperYaw = 0.0;
   @Logged private double hopperPitch = 0.0;
   @Logged private double hopperDistance = 0.0;
   @Logged private double hopperAmbiguity = 1.0;
   @Logged private boolean hopperVisible = false;
+  @Logged private boolean fuelVisible = false;
+  @Logged private double fuelYaw = 0.0;
+  @Logged private double fuelPitch = 0.0;
+  @Logged private double fuelArea = 0.0;
+  @Logged private int fuelTargetCount = 0;
+  @Logged private int fuelSelectedClusterCount = 0;
+  private final double[][] fuelHeatmap = new double[VisionConstants.kFuelHeatmapCellsX][VisionConstants.kFuelHeatmapCellsY];
+  private final Field2d fuelHeatmapField = new Field2d();
+  private double lastHeatmapTimestampSec = Double.NaN;
 
   public VisionSubsystem(
       BiConsumer<Pose2d, Double> consumer,
@@ -65,6 +80,7 @@ public class VisionSubsystem extends SubsystemBase {
         m_fieldLayout,
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
         cameraOffset));
+    setupFuelHeatmapWidget();
   }
 
   public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive) throws IOException {
@@ -102,21 +118,23 @@ public class VisionSubsystem extends SubsystemBase {
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
         rightOffset));
 
-    // Front camera (commented out for now).
+    // Front fuel camera (commented out for now).
     // Transform3d frontOffset = new Transform3d(
     //     new Translation3d(
-    //         VisionConstants.kFrontCameraOffsetX,
-    //         VisionConstants.kFrontCameraOffsetY,
-    //         VisionConstants.kFrontCameraOffsetZ),
+    //         VisionConstants.kFrontFuelCameraOffsetX,
+    //         VisionConstants.kFrontFuelCameraOffsetY,
+    //         VisionConstants.kFrontFuelCameraOffsetZ),
     //     new Rotation3d(
-    //         VisionConstants.kFrontCameraRotX,
-    //         VisionConstants.kFrontCameraRotY,
-    //         VisionConstants.kFrontCameraRotZ));
-    // m_photonCameras.add(new PhotonCamera(VisionConstants.kFrontCameraName));
+    //         VisionConstants.kFrontFuelCameraRotX,
+    //         VisionConstants.kFrontFuelCameraRotY,
+    //         VisionConstants.kFrontFuelCameraRotZ));
+    // m_photonCameras.add(new PhotonCamera(VisionConstants.kFrontFuelCameraName));
     // m_poseEstimators.add(new PhotonPoseEstimator(
     //     m_fieldLayout,
     //     PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
     //     frontOffset));
+
+    setupFuelHeatmapWidget();
   }
 
   @Override
@@ -199,6 +217,231 @@ public class VisionSubsystem extends SubsystemBase {
       hopperDistance = 0.0;
       hopperAmbiguity = 1.0;
     }
+
+    updateFuelTargeting();
+  }
+
+  private void updateFuelTargeting() {
+    applyHeatmapDecay();
+    fuelHeatmapField.setRobotPose(drive.getPose());
+
+    if (!m_fuelCamera.isConnected()) {
+      fuelVisible = false;
+      fuelYaw = 0.0;
+      fuelPitch = 0.0;
+      fuelArea = 0.0;
+      fuelTargetCount = 0;
+      fuelSelectedClusterCount = 0;
+      publishFuelHeatmapHotspots();
+      return;
+    }
+
+    var result = m_fuelCamera.getLatestResult();
+    if (!result.hasTargets()) {
+      fuelVisible = false;
+      fuelYaw = 0.0;
+      fuelPitch = 0.0;
+      fuelArea = 0.0;
+      fuelTargetCount = 0;
+      fuelSelectedClusterCount = 0;
+      publishFuelHeatmapHotspots();
+      return;
+    }
+
+    fuelTargetCount = result.targets.size();
+    var selectedCluster = selectBestFuelCluster(result.targets);
+
+    fuelVisible = true;
+    fuelYaw = selectedCluster.meanYawDeg;
+    fuelPitch = selectedCluster.meanPitchDeg;
+    fuelArea = selectedCluster.totalArea;
+    fuelSelectedClusterCount = selectedCluster.memberCount;
+
+    updateFuelHeatmapFromTargets(result.targets);
+    publishFuelHeatmapHotspots();
+  }
+
+  private void setupFuelHeatmapWidget() {
+    Shuffleboard.getTab("Vision")
+        .add("Fuel Heatmap", fuelHeatmapField)
+        .withProperties(Map.of(
+            "Field", VisionConstants.kFuelHeatmapFieldBackground,
+            "Robot Width", 0.8,
+            "Robot Length", 0.8))
+        .withPosition(0, 0)
+        .withSize(7, 4);
+    SmartDashboard.putData("Fuel Heatmap", fuelHeatmapField);
+  }
+
+  private void applyHeatmapDecay() {
+    double now = Timer.getFPGATimestamp();
+    if (Double.isNaN(lastHeatmapTimestampSec)) {
+      lastHeatmapTimestampSec = now;
+      return;
+    }
+
+    double dt = now - lastHeatmapTimestampSec;
+    lastHeatmapTimestampSec = now;
+    if (dt <= 0.0) {
+      return;
+    }
+
+    double decayScale = Math.max(0.0, 1.0 - (VisionConstants.kFuelHeatmapDecayPerSecond * dt));
+    for (int x = 0; x < VisionConstants.kFuelHeatmapCellsX; x++) {
+      for (int y = 0; y < VisionConstants.kFuelHeatmapCellsY; y++) {
+        fuelHeatmap[x][y] *= decayScale;
+      }
+    }
+  }
+
+  private void updateFuelHeatmapFromTargets(List<PhotonTrackedTarget> targets) {
+    Pose2d robotPose = drive.getPose();
+    double fieldLength = m_fieldLayout.getFieldLength();
+    double fieldWidth = m_fieldLayout.getFieldWidth();
+
+    for (PhotonTrackedTarget target : targets) {
+      double area = target.getArea();
+      if (area <= 0.0) {
+        continue;
+      }
+
+      double estimatedDistanceMeters = estimateFuelDistanceMetersFromArea(area);
+      double headingDeg = robotPose.getRotation().getDegrees()
+          + Math.toDegrees(VisionConstants.kFrontFuelCameraRotZ)
+          + target.getYaw();
+      double headingRad = Math.toRadians(headingDeg);
+      double pointX = robotPose.getX() + estimatedDistanceMeters * Math.cos(headingRad);
+      double pointY = robotPose.getY() + estimatedDistanceMeters * Math.sin(headingRad);
+
+      if (pointX < 0.0 || pointX > fieldLength || pointY < 0.0 || pointY > fieldWidth) {
+        continue;
+      }
+
+      int cellX = Math.min(
+          VisionConstants.kFuelHeatmapCellsX - 1,
+          Math.max(0, (int) ((pointX / fieldLength) * VisionConstants.kFuelHeatmapCellsX)));
+      int cellY = Math.min(
+          VisionConstants.kFuelHeatmapCellsY - 1,
+          Math.max(0, (int) ((pointY / fieldWidth) * VisionConstants.kFuelHeatmapCellsY)));
+
+      fuelHeatmap[cellX][cellY] += area;
+    }
+  }
+
+  private double estimateFuelDistanceMetersFromArea(double area) {
+    double estimate = VisionConstants.kFuelAreaToDistanceScale / Math.sqrt(area);
+    return MathUtil.clamp(
+        estimate,
+        VisionConstants.kFuelMinEstimatedDistanceMeters,
+        VisionConstants.kFuelMaxEstimatedDistanceMeters);
+  }
+
+  private void publishFuelHeatmapHotspots() {
+    double fieldLength = m_fieldLayout.getFieldLength();
+    double fieldWidth = m_fieldLayout.getFieldWidth();
+
+    class Hotspot {
+      final int x;
+      final int y;
+      final double value;
+
+      Hotspot(int x, int y, double value) {
+        this.x = x;
+        this.y = y;
+        this.value = value;
+      }
+    }
+
+    List<Hotspot> top = new ArrayList<>();
+    for (int x = 0; x < VisionConstants.kFuelHeatmapCellsX; x++) {
+      for (int y = 0; y < VisionConstants.kFuelHeatmapCellsY; y++) {
+        double value = fuelHeatmap[x][y];
+        if (value < VisionConstants.kFuelHeatmapMinHotspotValue) {
+          continue;
+        }
+
+        Hotspot candidate = new Hotspot(x, y, value);
+        int insert = -1;
+        for (int i = 0; i < top.size(); i++) {
+          if (candidate.value > top.get(i).value) {
+            insert = i;
+            break;
+          }
+        }
+        if (insert == -1) {
+          if (top.size() < VisionConstants.kFuelHeatmapHotspotsToDisplay) {
+            top.add(candidate);
+          }
+        } else {
+          top.add(insert, candidate);
+          if (top.size() > VisionConstants.kFuelHeatmapHotspotsToDisplay) {
+            top.remove(top.size() - 1);
+          }
+        }
+      }
+    }
+
+    for (int i = 0; i < VisionConstants.kFuelHeatmapHotspotsToDisplay; i++) {
+      if (i < top.size()) {
+        Hotspot hotspot = top.get(i);
+        double xMeters = ((hotspot.x + 0.5) / VisionConstants.kFuelHeatmapCellsX) * fieldLength;
+        double yMeters = ((hotspot.y + 0.5) / VisionConstants.kFuelHeatmapCellsY) * fieldWidth;
+        fuelHeatmapField.getObject("FuelHotspot" + i).setPose(new Pose2d(xMeters, yMeters, Rotation2d.kZero));
+      } else {
+        fuelHeatmapField.getObject("FuelHotspot" + i).setPose(new Pose2d(-1.0, -1.0, Rotation2d.kZero));
+      }
+    }
+  }
+
+  private static final class FuelCluster {
+    double meanYawDeg;
+    double meanPitchDeg;
+    double totalArea;
+    int memberCount;
+  }
+
+  private FuelCluster selectBestFuelCluster(List<PhotonTrackedTarget> targets) {
+    List<FuelCluster> clusters = new ArrayList<>();
+
+    for (PhotonTrackedTarget target : targets) {
+      double yaw = target.getYaw();
+      double pitch = target.getPitch();
+      double area = target.getArea();
+
+      FuelCluster matched = null;
+      for (FuelCluster cluster : clusters) {
+        if (Math.abs(yaw - cluster.meanYawDeg) <= VisionConstants.kFuelClusterYawToleranceDegrees
+            && Math.abs(pitch - cluster.meanPitchDeg) <= VisionConstants.kFuelClusterPitchToleranceDegrees) {
+          matched = cluster;
+          break;
+        }
+      }
+
+      if (matched == null) {
+        FuelCluster newCluster = new FuelCluster();
+        newCluster.meanYawDeg = yaw;
+        newCluster.meanPitchDeg = pitch;
+        newCluster.totalArea = area;
+        newCluster.memberCount = 1;
+        clusters.add(newCluster);
+      } else {
+        int newCount = matched.memberCount + 1;
+        matched.meanYawDeg = ((matched.meanYawDeg * matched.memberCount) + yaw) / newCount;
+        matched.meanPitchDeg = ((matched.meanPitchDeg * matched.memberCount) + pitch) / newCount;
+        matched.totalArea += area;
+        matched.memberCount = newCount;
+      }
+    }
+
+    FuelCluster best = clusters.get(0);
+    for (int i = 1; i < clusters.size(); i++) {
+      FuelCluster candidate = clusters.get(i);
+      if (candidate.memberCount > best.memberCount
+          || (candidate.memberCount == best.memberCount && candidate.totalArea > best.totalArea)) {
+        best = candidate;
+      }
+    }
+    return best;
   }
 
   public boolean canSeeHopper() {
@@ -283,5 +526,29 @@ public class VisionSubsystem extends SubsystemBase {
 
   public String getLastEstimatorCameraName() {
     return lastEstimatorCameraName;
+  }
+
+  public boolean canSeeFuel() {
+    return fuelVisible;
+  }
+
+  public double getFuelYaw() {
+    return fuelYaw;
+  }
+
+  public double getFuelPitch() {
+    return fuelPitch;
+  }
+
+  public double getFuelArea() {
+    return fuelArea;
+  }
+
+  public int getFuelTargetCount() {
+    return fuelTargetCount;
+  }
+
+  public int getFuelSelectedClusterCount() {
+    return fuelSelectedClusterCount;
   }
 }

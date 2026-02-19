@@ -20,6 +20,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.commands.AimWhileDrivingCommand;
+import frc.robot.commands.FollowFuelCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -83,6 +84,9 @@ public class RobotContainer {
 
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
     m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
+    if (m_vision != null) {
+      m_driverController.povUp().whileTrue(new FollowFuelCommand(m_vision, m_robotDrive));
+    }
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
     m_driverController.y().whileTrue(m_tomb.tomb());
@@ -91,6 +95,11 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
+    if (m_vision != null && AutoConstants.kUseFuelObjectAuto) {
+      return new FollowFuelCommand(m_vision, m_robotDrive)
+          .withTimeout(AutoConstants.kFuelAutoTimeoutSeconds);
+    }
+
     TrajectoryConfig config = new TrajectoryConfig(
         AutoConstants.kMaxSpeedMetersPerSecond,
         AutoConstants.kMaxAccelerationMetersPerSecondSquared)

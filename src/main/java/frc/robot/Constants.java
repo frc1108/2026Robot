@@ -88,6 +88,9 @@ public final class Constants {
     public static final TrapezoidProfile.Constraints kThetaControllerConstraints = new TrapezoidProfile.Constraints(
         kMaxAngularSpeedRadiansPerSecond,
         kMaxAngularSpeedRadiansPerSecondSquared);
+
+    public static final boolean kUseFuelObjectAuto = false;
+    public static final double kFuelAutoTimeoutSeconds = 4.0;
   }
 
   public static final class NeoMotorConstants {
@@ -126,25 +129,31 @@ public final class Constants {
   }
 
   public static final class VisionConstants {
+    // Camera names in PhotonVision.
     public static final String kLeftCameraName = "LeftSideCamera";
     public static final String kRightCameraName = "RightSideCamera";
-    // public static final String kFrontCameraName = "FrontSideCamera";
+    public static final String kFrontFuelCameraName = "FrontFuelCamera";
+    public static final String kFuelCameraName = kFrontFuelCameraName;
 
+    // Hopper targeting.
     public static final int kHopperTagId = 26;
     public static final double kHopperCenterOffsetForwardMeters = -0.305;
     public static final double kHopperCenterOffsetLeftMeters = 0.0;
 
+    // Shooter mount geometry in robot frame (+X forward, +Y left).
     public static final double kShooterOffsetForwardMeters = -0.2;
     public static final double kShooterOffsetLeftMeters = 0.2;
     public static final double kShooterYawOffsetDegrees = 90.0;
 
-    public static final double kLeftCameraOffsetX = 0.0;   //Front 
-    public static final double kLeftCameraOffsetY = 0.368; //Side Left+
-    public static final double kLeftCameraOffsetZ = 0.711; //Height Up+
-    public static final double kLeftCameraRotX = 0.0;      //
-    public static final double kLeftCameraRotY = 0.0;      //
-    public static final double kLeftCameraRotZ = 1.5708;   //Yaw CCW+
+    // Left camera mount pose in robot frame.
+    public static final double kLeftCameraOffsetX = 0.0;   // +X forward (meters)
+    public static final double kLeftCameraOffsetY = 0.368; // +Y left (meters)
+    public static final double kLeftCameraOffsetZ = 0.711; // +Z up (meters)
+    public static final double kLeftCameraRotX = 0.0;      // roll about +X (radians)
+    public static final double kLeftCameraRotY = 0.0;      // pitch about +Y (radians)
+    public static final double kLeftCameraRotZ = 1.5708;   // yaw about +Z (radians), +90 deg
 
+    // Right camera mount pose in robot frame.
     public static final double kRightCameraOffsetX = 0.0;
     public static final double kRightCameraOffsetY = -0.368;
     public static final double kRightCameraOffsetZ = 0.711;
@@ -152,13 +161,13 @@ public final class Constants {
     public static final double kRightCameraRotY = 0.0;
     public static final double kRightCameraRotZ = -1.5708;
 
-    // Front camera (commented out for now).
-    // public static final double kFrontCameraOffsetX = 0.0;
-    // public static final double kFrontCameraOffsetY = 0.0;
-    // public static final double kFrontCameraOffsetZ = 0.711;
-    // public static final double kFrontCameraRotX = 0.0;
-    // public static final double kFrontCameraRotY = 0.0;
-    // public static final double kFrontCameraRotZ = 0.0;
+    // Front fuel camera mount (robot frame).
+    public static final double kFrontFuelCameraOffsetX = 0.0;
+    public static final double kFrontFuelCameraOffsetY = 0.0;
+    public static final double kFrontFuelCameraOffsetZ = 0.711;
+    public static final double kFrontFuelCameraRotX = 0.0;
+    public static final double kFrontFuelCameraRotY = 0.0;
+    public static final double kFrontFuelCameraRotZ = 0.0;
 
     public static final double kMaxDistanceMeters = 10.0;
     public static final double kMaxAmbiguity = 0.35;
@@ -172,5 +181,42 @@ public final class Constants {
     public static final double kBallExitSpeedMetersPerSecond = 9.0;
     public static final double kShotLeadGain = 1.0;
     public static final double kMaxShotLeadDegrees = 12.0;
+
+    // Fuel-object follow tuning (PhotonVision object detection / YOLO).
+    public static final double kFuelAimP = 0.03;
+    public static final double kFuelAimI = 0.0;
+    public static final double kFuelAimD = 0.001;
+    public static final double kFuelApproachP = 0.09;
+    public static final double kFuelTargetArea = 10.0;
+    public static final double kFuelFinishArea = 13.0;
+    public static final double kFuelMaxDriveSpeed = 0.45;
+    public static final double kFuelMaxTurnSpeed = 0.5;
+    public static final double kFuelSearchTurnSpeed = 0.22;
+    public static final double kFuelYawToleranceDegrees = 3.0;
+
+    // Fuel cluster selection:
+    // detections within these yaw/pitch windows are grouped into one cluster.
+    public static final double kFuelClusterYawToleranceDegrees = 6.0;
+    public static final double kFuelClusterPitchToleranceDegrees = 6.0;
+
+    // Fuel heatmap (Shuffleboard Field2d overlay):
+    // grid resolution in field cells.
+    public static final int kFuelHeatmapCellsX = 24;
+    public static final int kFuelHeatmapCellsY = 12;
+    // Requested Shuffleboard field background name for the heatmap widget.
+    public static final String kFuelHeatmapFieldBackground = "2026RebuiltWelded";
+    // How quickly old cells fade each second (0=no decay, 1=full clear every second).
+    public static final double kFuelHeatmapDecayPerSecond = 0.35;
+    // Number of top-intensity cells drawn as hotspot markers.
+    public static final int kFuelHeatmapHotspotsToDisplay = 6;
+    // Minimum cell value required before a hotspot marker is shown.
+    public static final double kFuelHeatmapMinHotspotValue = 0.2;
+
+    // Approximate range from object area:
+    // estimatedDistanceMeters ~= kFuelAreaToDistanceScale / sqrt(area).
+    // Tune scale first, then clamp min/max to keep projections sane.
+    public static final double kFuelAreaToDistanceScale = 2.2;
+    public static final double kFuelMinEstimatedDistanceMeters = 0.3;
+    public static final double kFuelMaxEstimatedDistanceMeters = 4.0;
   }
 }
