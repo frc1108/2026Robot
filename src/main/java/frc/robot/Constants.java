@@ -132,6 +132,7 @@ public final class Constants {
     // Camera names in PhotonVision.
     public static final String kLeftCameraName = "LeftSideCamera";
     public static final String kRightCameraName = "RightSideCamera";
+    public static final String kFrontSideCameraName = "FrontSideCamera";
     public static final String kFrontFuelCameraName = "FrontFuelCamera";
     public static final String kFuelCameraName = kFrontFuelCameraName;
 
@@ -161,10 +162,18 @@ public final class Constants {
     public static final double kRightCameraRotY = 0.0;
     public static final double kRightCameraRotZ = -1.5708;
 
+    // Front-side camera mount pose in robot frame (AprilTag camera).
+    public static final double kFrontSideCameraOffsetX = 0.305;
+    public static final double kFrontSideCameraOffsetY = 0.0;
+    public static final double kFrontSideCameraOffsetZ = 0.711;
+    public static final double kFrontSideCameraRotX = 0.0;
+    public static final double kFrontSideCameraRotY = 0.0;
+    public static final double kFrontSideCameraRotZ = 0.0;
+
     // Front fuel camera mount (robot frame).
-    public static final double kFrontFuelCameraOffsetX = 0.0;
+    public static final double kFrontFuelCameraOffsetX = 0.305;
     public static final double kFrontFuelCameraOffsetY = 0.0;
-    public static final double kFrontFuelCameraOffsetZ = 0.711;
+    public static final double kFrontFuelCameraOffsetZ = 0.305;
     public static final double kFrontFuelCameraRotX = 0.0;
     public static final double kFrontFuelCameraRotY = 0.0;
     public static final double kFrontFuelCameraRotZ = 0.0;
@@ -205,6 +214,10 @@ public final class Constants {
     public static final int kFuelHeatmapCellsY = 18;
     // Requested field image/background name for Field2d widgets.
     public static final String kFuelHeatmapFieldBackground = "2026RebuiltWelded";
+    // Master enable for heatmap publishing to dashboards.
+    public static final boolean kEnableFuelHeatmap = true;
+    // Limit dashboard update rate to reduce client-side lag.
+    public static final double kFuelHeatmapPublishPeriodSeconds = 1.0;
     // How quickly old cells fade each second (0=no decay, 1=full clear every second).
     public static final double kFuelHeatmapDecayPerSecond = 0.35;
     // Number of top-intensity cells drawn as hotspot markers.
@@ -218,5 +231,10 @@ public final class Constants {
     public static final double kFuelAreaToDistanceScale = 2.2;
     public static final double kFuelMinEstimatedDistanceMeters = 0.3;
     public static final double kFuelMaxEstimatedDistanceMeters = 4.0;
+
+    // Camera startup re-init pulse:
+    // run once after boot to force PhotonVision to re-apply camera settings.
+    public static final boolean kRunCameraStartupReinitPulse = true;
+    public static final double kCameraStartupReinitDelaySeconds = 2.0;
   }
 }

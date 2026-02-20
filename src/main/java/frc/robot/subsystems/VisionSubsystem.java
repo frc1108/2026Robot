@@ -48,8 +48,10 @@ public class VisionSubsystem extends SubsystemBase {
   private Pose3d estimated3dPose = new Pose3d();
   @Logged private Pose3d leftEstimated3dPose = new Pose3d();
   @Logged private Pose3d rightEstimated3dPose = new Pose3d();
+  @Logged private Pose3d frontEstimated3dPose = new Pose3d();
   @Logged private String lastEstimatorCameraName = "";
   private final PhotonCamera m_fuelCamera = new PhotonCamera(VisionConstants.kFuelCameraName);
+  private final List<PhotonCamera> m_allStartupPulseCameras = new ArrayList<>();
 
   @Logged private double hopperYaw = 0.0;
   @Logged private double hopperPitch = 0.0;
@@ -65,6 +67,9 @@ public class VisionSubsystem extends SubsystemBase {
   private final double[][] fuelHeatmap = new double[VisionConstants.kFuelHeatmapCellsX][VisionConstants.kFuelHeatmapCellsY];
   private final Field2d fuelHeatmapField = new Field2d();
   private double lastHeatmapTimestampSec = Double.NaN;
+  private double lastHeatmapPublishTimestampSec = Double.NaN;
+  private final double startupTimestampSec = Timer.getFPGATimestamp();
+  private boolean cameraStartupPulseApplied = false;
 
   public VisionSubsystem(
       BiConsumer<Pose2d, Double> consumer,
@@ -76,6 +81,8 @@ public class VisionSubsystem extends SubsystemBase {
     this.drive = drive;
 
     m_photonCameras.add(new PhotonCamera(leftSideCamera));
+    m_allStartupPulseCameras.add(m_photonCameras.get(m_photonCameras.size() - 1));
+    m_allStartupPulseCameras.add(m_fuelCamera);
     m_poseEstimators.add(new PhotonPoseEstimator(
         m_fieldLayout,
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
@@ -98,6 +105,7 @@ public class VisionSubsystem extends SubsystemBase {
             VisionConstants.kLeftCameraRotY,
             VisionConstants.kLeftCameraRotZ));
     m_photonCameras.add(new PhotonCamera(VisionConstants.kLeftCameraName));
+    m_allStartupPulseCameras.add(m_photonCameras.get(m_photonCameras.size() - 1));
     m_poseEstimators.add(new PhotonPoseEstimator(
         m_fieldLayout,
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
@@ -113,32 +121,37 @@ public class VisionSubsystem extends SubsystemBase {
             VisionConstants.kRightCameraRotY,
             VisionConstants.kRightCameraRotZ));
     m_photonCameras.add(new PhotonCamera(VisionConstants.kRightCameraName));
+    m_allStartupPulseCameras.add(m_photonCameras.get(m_photonCameras.size() - 1));
     m_poseEstimators.add(new PhotonPoseEstimator(
         m_fieldLayout,
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
         rightOffset));
 
-    // Front fuel camera (commented out for now).
-    // Transform3d frontOffset = new Transform3d(
-    //     new Translation3d(
-    //         VisionConstants.kFrontFuelCameraOffsetX,
-    //         VisionConstants.kFrontFuelCameraOffsetY,
-    //         VisionConstants.kFrontFuelCameraOffsetZ),
-    //     new Rotation3d(
-    //         VisionConstants.kFrontFuelCameraRotX,
-    //         VisionConstants.kFrontFuelCameraRotY,
-    //         VisionConstants.kFrontFuelCameraRotZ));
-    // m_photonCameras.add(new PhotonCamera(VisionConstants.kFrontFuelCameraName));
-    // m_poseEstimators.add(new PhotonPoseEstimator(
-    //     m_fieldLayout,
-    //     PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-    //     frontOffset));
+    Transform3d frontSideOffset = new Transform3d(
+        new Translation3d(
+            VisionConstants.kFrontSideCameraOffsetX,
+            VisionConstants.kFrontSideCameraOffsetY,
+            VisionConstants.kFrontSideCameraOffsetZ),
+        new Rotation3d(
+            VisionConstants.kFrontSideCameraRotX,
+            VisionConstants.kFrontSideCameraRotY,
+            VisionConstants.kFrontSideCameraRotZ));
+    m_photonCameras.add(new PhotonCamera(VisionConstants.kFrontSideCameraName));
+    m_allStartupPulseCameras.add(m_photonCameras.get(m_photonCameras.size() - 1));
+    m_poseEstimators.add(new PhotonPoseEstimator(
+        m_fieldLayout,
+        PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        frontSideOffset));
+
+    m_allStartupPulseCameras.add(m_fuelCamera);
 
     setupFuelHeatmapWidget();
   }
 
   @Override
   public void periodic() {
+    maybeApplyStartupCameraPulse();
+
     Pose2d fallbackPose = drive.getPose();
     // Use fused drive pose until we have at least one vision estimate.
     Pose2d robotPoseForFiltering =
@@ -187,6 +200,8 @@ public class VisionSubsystem extends SubsystemBase {
           leftEstimated3dPose = estimatedPose.estimatedPose;
         } else if (i == 1) {
           rightEstimated3dPose = estimatedPose.estimatedPose;
+        } else if (i == 2) {
+          frontEstimated3dPose = estimatedPose.estimatedPose;
         }
       }
 
@@ -221,9 +236,34 @@ public class VisionSubsystem extends SubsystemBase {
     updateFuelTargeting();
   }
 
+  private void maybeApplyStartupCameraPulse() {
+    if (!VisionConstants.kRunCameraStartupReinitPulse || cameraStartupPulseApplied) {
+      return;
+    }
+
+    double now = Timer.getFPGATimestamp();
+    if ((now - startupTimestampSec) < VisionConstants.kCameraStartupReinitDelaySeconds) {
+      return;
+    }
+
+    for (PhotonCamera camera : m_allStartupPulseCameras) {
+      if (camera == null || !camera.isConnected()) {
+        continue;
+      }
+
+      // PhotonLib does not expose auto-exposure toggles directly.
+      // This startup pulse forces PhotonVision to re-apply camera settings.
+      int pipeline = camera.getPipelineIndex();
+      camera.setDriverMode(true);
+      camera.setDriverMode(false);
+      camera.setPipelineIndex(pipeline);
+    }
+
+    cameraStartupPulseApplied = true;
+  }
+
   private void updateFuelTargeting() {
     applyHeatmapDecay();
-    fuelHeatmapField.setRobotPose(drive.getPose());
 
     if (!m_fuelCamera.isConnected()) {
       fuelVisible = false;
@@ -232,7 +272,7 @@ public class VisionSubsystem extends SubsystemBase {
       fuelArea = 0.0;
       fuelTargetCount = 0;
       fuelSelectedClusterCount = 0;
-      publishFuelHeatmapHotspots();
+      publishFuelHeatmapIfDue();
       return;
     }
 
@@ -244,7 +284,7 @@ public class VisionSubsystem extends SubsystemBase {
       fuelArea = 0.0;
       fuelTargetCount = 0;
       fuelSelectedClusterCount = 0;
-      publishFuelHeatmapHotspots();
+      publishFuelHeatmapIfDue();
       return;
     }
 
@@ -258,6 +298,22 @@ public class VisionSubsystem extends SubsystemBase {
     fuelSelectedClusterCount = selectedCluster.memberCount;
 
     updateFuelHeatmapFromTargets(result.targets);
+    publishFuelHeatmapIfDue();
+  }
+
+  private void publishFuelHeatmapIfDue() {
+    if (!VisionConstants.kEnableFuelHeatmap) {
+      return;
+    }
+
+    double now = Timer.getFPGATimestamp();
+    if (!Double.isNaN(lastHeatmapPublishTimestampSec)
+        && (now - lastHeatmapPublishTimestampSec) < VisionConstants.kFuelHeatmapPublishPeriodSeconds) {
+      return;
+    }
+
+    lastHeatmapPublishTimestampSec = now;
+    fuelHeatmapField.setRobotPose(drive.getPose());
     publishFuelHeatmapHotspots();
   }
 
@@ -522,6 +578,10 @@ public class VisionSubsystem extends SubsystemBase {
 
   public Pose3d getRightEstimated3dPose() {
     return rightEstimated3dPose;
+  }
+
+  public Pose3d getFrontEstimated3dPose() {
+    return frontEstimated3dPose;
   }
 
   public String getLastEstimatorCameraName() {

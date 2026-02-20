@@ -12,8 +12,10 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.commands.AimWhileDrivingCommand;
@@ -67,8 +69,10 @@ public class RobotContainer {
     m_autoChooser = AutoBuilder.buildAutoChooser("Hopper Test");
     Shuffleboard.getTab("Autonomous")
         .add("Auto Chooser", m_autoChooser)
+        .withWidget(BuiltInWidgets.kComboBoxChooser)
         .withPosition(0, 0)
         .withSize(5, 2);
+    SmartDashboard.putData("Auto Chooser", m_autoChooser);
   }
 
   private void configurePathPlannerNamedCommands() {
