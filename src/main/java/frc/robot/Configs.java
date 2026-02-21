@@ -73,4 +73,24 @@ public final class Configs {
         feederConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(30).voltageCompensation(10);
     }}
 
+        public static final class Shooter {
+                public static final SparkMaxConfig hoodConfig = new SparkMaxConfig();
+
+                static {
+                        // Configure hood encoder conversions (rotations -> degrees)
+                        hoodConfig.encoder
+                                .positionConversionFactor(360.0 / Constants.ShooterConstants.kHoodGearRatio)
+                                .velocityConversionFactor(360.0 / (Constants.ShooterConstants.kHoodGearRatio * 60.0));
+
+                        // Closed-loop PID for hood
+                        hoodConfig.closedLoop
+                                .pid(Constants.ShooterConstants.kHoodP, Constants.ShooterConstants.kHoodI, Constants.ShooterConstants.kHoodD)
+                                .outputRange(-Constants.ShooterConstants.kHoodMaxClosedLoopOutput,
+                                        Constants.ShooterConstants.kHoodMaxClosedLoopOutput);
+
+                        // Use brake idle for hood motor
+                        hoodConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(20).voltageCompensation(10);
+                }
+        }
+
 }
