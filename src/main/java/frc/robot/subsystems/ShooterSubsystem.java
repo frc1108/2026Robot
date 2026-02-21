@@ -47,6 +47,12 @@ public class ShooterSubsystem extends SubsystemBase {
   public void stopShooter() {
     setShooterPower(0.0);
   }
+public Command shootCommand() {
+return this.startEnd( () -> this.setShooterPower(0.90), () -> this.setShooterPower(0.0));
+}
+public Command slowShootCommand() {
+return this.startEnd( () -> this.setShooterPower(0.5), () -> this.setShooterPower(0.0));
+}
 
   /**
    * Get current shooter power

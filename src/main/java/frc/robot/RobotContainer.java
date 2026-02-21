@@ -73,6 +73,33 @@ public class RobotContainer {
         .withPosition(0, 0)
         .withSize(5, 2);
     SmartDashboard.putData("Auto Chooser", m_autoChooser);
+  /**
+   * Use this method to define your button->command mappings. Buttons can be
+   * created by
+   * instantiating a {@link edu.wpi.first.wpilibj.GenericHID} or one of its
+   * subclasses ({@link
+   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then calling
+   * passing it to a
+   * {@link JoystickButton}.
+   */
+  private void configureButtonBindings() {
+    // new JoystickButton(m_driverController, Button.kR1.value)
+    //     .whileTrue(new RunCommand(
+    //         () -> m_robotDrive.setX(),
+    //         m_robotDrive));
+
+    // new JoystickButton(m_driverController, XboxController.Button.kStart.value)
+    //     .onTrue(new InstantCommand(
+    //         () -> m_robotDrive.zeroHeading(),
+    //         m_robotDrive));
+
+    m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());///rightTrigger().whileTrue(m_shooter.shootCommand());
+    m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
+    m_driverController.leftTrigger().whileTrue(m_intake.intake());
+    m_driverController.povDown().whileTrue(m_intake.reverseIntake());
+    m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
+    m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
+    m_driverController.y().whileTrue(m_tomb.tomb());
   }
 
   private void configurePathPlannerNamedCommands() {
