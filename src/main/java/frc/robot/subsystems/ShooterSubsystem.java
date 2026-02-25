@@ -27,18 +27,12 @@ public class ShooterSubsystem extends SubsystemBase {
     m_hood = hood;
   }
 
-  @Override
-  public void periodic() {
-  }
-
   private void setShooterPower(double power) {
+    // Right motor is mounted opposite the left, so it must be inverted.
     m_leftShooter.set(power);
     m_rightShooter.set(-power);
   }
 
-  /**
-   * Stop the shooter
-   */
   public void stopShooter() {
     setShooterPower(0.0);
   }
@@ -47,18 +41,16 @@ public class ShooterSubsystem extends SubsystemBase {
     return m_leftShooter.get();
   }
 
+  private Command runShooterAt(double power) {
+    return startEnd(() -> setShooterPower(power), this::stopShooter);
+  }
+
   public Command shootCommand() {
-    return this.startEnd(
-        () -> this.setShooterPower(ShooterConstants.kShooterFullSpeed),
-        this::stopShooter
-    );
+    return runShooterAt(ShooterConstants.kShooterFullSpeed);
   }
 
   public Command slowShootCommand() {
-    return this.startEnd(
-        () -> this.setShooterPower(ShooterConstants.kShooterSlowSpeed),
-        this::stopShooter
-    );
+    return runShooterAt(ShooterConstants.kShooterSlowSpeed);
   }
 
   public Command shootWithHoodCommand(double hoodAngleDegrees) {

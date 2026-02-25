@@ -4,20 +4,20 @@
 
 package frc.robot;
 
-import java.util.Optional;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.AimWhileDrivingCommand;
 import frc.robot.commands.FollowFuelCommand;
 import frc.robot.subsystems.DriveSubsystem;
@@ -43,6 +43,8 @@ public class RobotContainer {
   private final TombSubsystem m_tomb = new TombSubsystem();
   private VisionSubsystem m_vision;
   private boolean m_autoAimAtHopperEnabled = false;
+  private final PIDController m_autoAimRotationPid =
+      new PIDController(VisionConstants.kAimP, VisionConstants.kAimI, VisionConstants.kAimD);
   private SendableChooser<Command> m_autoChooser;
   private final CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
 
@@ -55,6 +57,8 @@ public class RobotContainer {
     }
 
     m_shooter.setHoodSubsystem(m_hood);
+    m_autoAimRotationPid.enableContinuousInput(-180.0, 180.0);
+    m_autoAimRotationPid.setTolerance(VisionConstants.kAimingToleranceDegrees);
     configurePathPlannerNamedCommands();
     configureAutoChooser();
     configureButtonBindings();
@@ -82,21 +86,39 @@ public class RobotContainer {
   private void configurePathPlannerNamedCommands() {
     NamedCommands.registerCommand(
         "AimAtHopperOn",
-        Commands.runOnce(() -> m_autoAimAtHopperEnabled = true));
+        Commands.runOnce(() -> {
+          m_autoAimAtHopperEnabled = true;
+          m_autoAimRotationPid.reset();
+          PPHolonomicDriveController.overrideRotationFeedback(this::getAutoAimRotationFeedbackRadPerSec);
+        }));
     NamedCommands.registerCommand(
         "AimAtHopperOff",
-        Commands.runOnce(() -> m_autoAimAtHopperEnabled = false));
+        Commands.runOnce(this::disableAutoAimOverride));
+  }
 
-    PPHolonomicDriveController.setRotationTargetOverride(() -> {
-      if (!m_autoAimAtHopperEnabled || m_vision == null) {
-        return Optional.empty();
-      }
+  private double getAutoAimRotationFeedbackRadPerSec() {
+    if (!m_autoAimAtHopperEnabled || m_vision == null) {
+      return 0.0;
+    }
 
-      return m_vision.getHopperTargetHeadingDegrees(m_robotDrive.getPose())
-          .stream()
-          .mapToObj(Rotation2d::fromDegrees)
-          .findFirst();
-    });
+    double currentHeadingDeg = m_robotDrive.getPose().getRotation().getDegrees();
+    var targetHeadingDeg = m_vision.getHopperTargetHeadingDegrees(m_robotDrive.getPose());
+    if (targetHeadingDeg.isEmpty()) {
+      return 0.0;
+    }
+
+    double normalizedRotationCmd =
+        MathUtil.clamp(m_autoAimRotationPid.calculate(currentHeadingDeg, targetHeadingDeg.getAsDouble()), -1.0, 1.0);
+    return normalizedRotationCmd * DriveConstants.kMaxAngularSpeed;
+  }
+
+  private void disableAutoAimOverride() {
+    m_autoAimAtHopperEnabled = false;
+    PPHolonomicDriveController.clearRotationFeedbackOverride();
+  }
+
+  public void clearAutoAimOverride() {
+    disableAutoAimOverride();
   }
 
   private void configureButtonBindings() {
@@ -130,12 +152,16 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     if (m_vision != null && AutoConstants.kUseFuelObjectAuto) {
       return new FollowFuelCommand(m_vision, m_robotDrive)
-          .withTimeout(AutoConstants.kFuelAutoTimeoutSeconds);
+          .withTimeout(AutoConstants.kFuelAutoTimeoutSeconds)
+          .beforeStarting(this::disableAutoAimOverride)
+          .andThen(Commands.runOnce(this::disableAutoAimOverride));
     }
 
     if (m_autoChooser != null && m_autoChooser.getSelected() != null) {
-      return m_autoChooser.getSelected();
+      return m_autoChooser.getSelected()
+          .beforeStarting(this::disableAutoAimOverride)
+          .andThen(Commands.runOnce(this::disableAutoAimOverride));
     }
-    return Commands.none();
+    return Commands.runOnce(this::disableAutoAimOverride);
   }
 }
