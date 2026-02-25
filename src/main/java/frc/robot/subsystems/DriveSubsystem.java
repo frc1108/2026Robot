@@ -22,14 +22,12 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-// gyro implementations (ADIS16470_IMU, Pigeon2) are available but unused here
 import com.reduxrobotics.sensors.canandgyro.Canandgyro;
 import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 @Logged
 public class DriveSubsystem extends SubsystemBase {
-  // Create MAXSwerveModules
   private final MAXSwerveModule m_frontLeft = new MAXSwerveModule(
       DriveConstants.kFrontLeftDrivingCanId,
       DriveConstants.kFrontLeftTurningCanId,
@@ -50,67 +48,47 @@ public class DriveSubsystem extends SubsystemBase {
       DriveConstants.kRearRightTurningCanId,
       DriveConstants.kBackRightChassisAngularOffset);
 
-  // The gyro sensor
-  //private final ADIS16470_IMU m_gyro = new ADIS16470_IMU();
-  //private final Pigeon2 m_gyro = new Pigeon2(0);
   private final Canandgyro m_gyro = new Canandgyro(0);
-  
 
-  // Pose estimator for tracking robot pose (supports vision fusion)
-  SwerveDrivePoseEstimator m_poseEstimator = new SwerveDrivePoseEstimator(
-    DriveConstants.kDriveKinematics,
-    m_gyro.getRotation2d(),
-    new SwerveModulePosition[] {
-      m_frontLeft.getPosition(),
-      m_frontRight.getPosition(),
-      m_rearLeft.getPosition(),
-      m_rearRight.getPosition()
-    },
-    new Pose2d());
+  private final SwerveDrivePoseEstimator m_poseEstimator = new SwerveDrivePoseEstimator(
+      DriveConstants.kDriveKinematics,
+      m_gyro.getRotation2d(),
+      new SwerveModulePosition[] {
+          m_frontLeft.getPosition(),
+          m_frontRight.getPosition(),
+          m_rearLeft.getPosition(),
+          m_rearRight.getPosition()
+      },
+      new Pose2d());
 
-  /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
-    // Usage reporting for MAXSwerve template
     HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_MaxSwerve);
     configurePathPlanner();
   }
 
-  // Exposed to Advantage Scope via @Logged so you can see the current fused pose
-  @Logged public edu.wpi.first.math.geometry.Pose2d loggedPose = new edu.wpi.first.math.geometry.Pose2d();
+  // Exposed to Advantage Scope for live fused-pose inspection.
+  @Logged public Pose2d loggedPose = new Pose2d();
 
   @Override
   public void periodic() {
-    // Update the odometry in the periodic block
     m_poseEstimator.update(
-      m_gyro.getRotation2d(),
-        //Rotation2d.fromDegrees(m_gyro.getAngle(IMUAxis.kZ)),
+        m_gyro.getRotation2d(),
         new SwerveModulePosition[] {
             m_frontLeft.getPosition(),
             m_frontRight.getPosition(),
             m_rearLeft.getPosition(),
             m_rearRight.getPosition()
         });
-    // Update logged pose for Advantage Scope
     loggedPose = m_poseEstimator.getEstimatedPosition();
   }
 
-  /**
-   * Returns the currently-estimated pose of the robot.
-   *
-   * @return The pose.
-   */
   public Pose2d getPose() {
-  return m_poseEstimator.getEstimatedPosition();
+    return m_poseEstimator.getEstimatedPosition();
   }
 
-  /**
-   * Resets the odometry to the specified pose.
-   *
-   * @param pose The pose to which to set the odometry.
-   */
   public void resetOdometry(Pose2d pose) {
     m_poseEstimator.resetPosition(
-      m_gyro.getRotation2d(),
+        m_gyro.getRotation2d(),
         new SwerveModulePosition[] {
             m_frontLeft.getPosition(),
             m_frontRight.getPosition(),
@@ -118,21 +96,10 @@ public class DriveSubsystem extends SubsystemBase {
             m_rearRight.getPosition()
         },
         pose);
-    // Keep logged pose in sync
     loggedPose = pose;
   }
 
-  /**
-   * Method to drive the robot using joystick info.
-   *
-   * @param xSpeed        Speed of the robot in the x direction (forward).
-   * @param ySpeed        Speed of the robot in the y direction (sideways).
-   * @param rot           Angular rate of the robot.
-   * @param fieldRelative Whether the provided x and y speeds are relative to the
-   *                      field.
-   */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
-    // Convert the commanded speeds into the correct units for the drivetrain
     double xSpeedDelivered = xSpeed * DriveConstants.kMaxSpeedMetersPerSecond;
     double ySpeedDelivered = ySpeed * DriveConstants.kMaxSpeedMetersPerSecond;
     double rotDelivered = rot * DriveConstants.kMaxAngularSpeed;
@@ -140,8 +107,7 @@ public class DriveSubsystem extends SubsystemBase {
     var swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(
         fieldRelative
             ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeedDelivered, ySpeedDelivered, rotDelivered,
-            m_gyro.getRotation2d())
-               // Rotation2d.fromDegrees(m_gyro.getAngle(IMUAxis.kZ)))
+                m_gyro.getRotation2d())
             : new ChassisSpeeds(xSpeedDelivered, ySpeedDelivered, rotDelivered));
     SwerveDriveKinematics.desaturateWheelSpeeds(
         swerveModuleStates, DriveConstants.kMaxSpeedMetersPerSecond);
@@ -151,9 +117,6 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearRight.setDesiredState(swerveModuleStates[3]);
   }
 
-  /**
-   * Sets the wheels into an X formation to prevent movement.
-   */
   public void setX() {
     m_frontLeft.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
     m_frontRight.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
@@ -161,11 +124,6 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearRight.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
   }
 
-  /**
-   * Sets the swerve ModuleStates.
-   *
-   * @param desiredStates The desired SwerveModule states.
-   */
   public void setModuleStates(SwerveModuleState[] desiredStates) {
     SwerveDriveKinematics.desaturateWheelSpeeds(
         desiredStates, DriveConstants.kMaxSpeedMetersPerSecond);
@@ -188,7 +146,6 @@ public class DriveSubsystem extends SubsystemBase {
     setModuleStates(desiredStates);
   }
 
-  /** Resets the drive encoders to currently read a position of 0. */
   public void resetEncoders() {
     m_frontLeft.resetEncoders();
     m_rearLeft.resetEncoders();
@@ -196,31 +153,17 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearRight.resetEncoders();
   }
 
-  /** Zeroes the heading of the robot. */
   public void zeroHeading() {
     m_gyro.setYaw(0);
   }
 
-  /**
-   * Returns the heading of the robot.
-   *
-   * @return the robot's heading in degrees, from -180 to 180
-   */
   public double getHeading() {
-   return m_gyro.getRotation2d().getDegrees();
-    //return Rotation2d.fromDegrees(m_gyro.getAngle(IMUAxis.kZ)).getDegrees();
+    return m_gyro.getRotation2d().getDegrees();
   }
 
-  /**
-   * Add a vision measurement to the odometry. This is called by VisionSubsystem
-   * to update the robot's estimated pose based on AprilTag detections.
-   * 
-   * @param estimatedPose The estimated pose from vision
-   * @param timestampSeconds The timestamp of the measurement
-   */
+  // Vision updates are fused into drivetrain pose estimation.
   public void addVisionMeasurement(Pose2d estimatedPose, double timestampSeconds) {
     m_poseEstimator.addVisionMeasurement(estimatedPose, timestampSeconds);
-    // Also update logged pose so Advantage Scope sees the incoming vision measurement
     loggedPose = estimatedPose;
   }
 
@@ -244,13 +187,4 @@ public class DriveSubsystem extends SubsystemBase {
       DriverStation.reportError("Failed to configure PathPlanner AutoBuilder", e.getStackTrace());
     }
   }
-
-  // /**
-  //  * Returns the turn rate of the robot.
-  //  *
-  //  * @return The turn rate of the robot, in degrees per second
-  //  */
-  // public double getTurnRate() {
-  //   return m_gyro.getRate(IMUAxis.kZ) * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
-  // }
 }

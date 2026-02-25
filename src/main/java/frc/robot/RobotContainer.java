@@ -30,8 +30,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+
 @Logged
 public class RobotContainer {
+  private static final String kDefaultAutoName = "Hopper Test";
+  private static final double kDefaultHopperDistanceMeters = 2.5;
+
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final ShooterSubsystem m_shooter = new ShooterSubsystem();
   private final HoodSubsystem m_hood = new HoodSubsystem();
@@ -66,40 +70,13 @@ public class RobotContainer {
   }
 
   private void configureAutoChooser() {
-    m_autoChooser = AutoBuilder.buildAutoChooser("Hopper Test");
+    m_autoChooser = AutoBuilder.buildAutoChooser(kDefaultAutoName);
     Shuffleboard.getTab("Autonomous")
         .add("Auto Chooser", m_autoChooser)
         .withWidget(BuiltInWidgets.kComboBoxChooser)
         .withPosition(0, 0)
         .withSize(5, 2);
     SmartDashboard.putData("Auto Chooser", m_autoChooser);
-  /**
-   * Use this method to define your button->command mappings. Buttons can be
-   * created by
-   * instantiating a {@link edu.wpi.first.wpilibj.GenericHID} or one of its
-   * subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then calling
-   * passing it to a
-   * {@link JoystickButton}.
-   */
-  private void configureButtonBindings() {
-    // new JoystickButton(m_driverController, Button.kR1.value)
-    //     .whileTrue(new RunCommand(
-    //         () -> m_robotDrive.setX(),
-    //         m_robotDrive));
-
-    // new JoystickButton(m_driverController, XboxController.Button.kStart.value)
-    //     .onTrue(new InstantCommand(
-    //         () -> m_robotDrive.zeroHeading(),
-    //         m_robotDrive));
-
-    m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());///rightTrigger().whileTrue(m_shooter.shootCommand());
-    m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
-    m_driverController.leftTrigger().whileTrue(m_intake.intake());
-    m_driverController.povDown().whileTrue(m_intake.reverseIntake());
-    m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
-    m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
-    m_driverController.y().whileTrue(m_tomb.tomb());
   }
 
   private void configurePathPlannerNamedCommands() {
@@ -123,34 +100,31 @@ public class RobotContainer {
   }
 
   private void configureButtonBindings() {
-    if (m_vision != null) {
+    boolean hasVision = m_vision != null;
+
+    if (hasVision) {
       m_driverController.rightBumper().whileTrue(new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
     }
 
-    if (m_vision != null) {
+    if (hasVision) {
+      // Keep hood angle synchronized with measured distance while shooting.
       m_driverController.rightTrigger().whileTrue(Commands.parallel(
           m_shooter.shootCommand(),
           m_hood.autoHoodFromDistanceCommand(
-              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(2.5))));
-      //m_driverController.rightBumper().whileTrue(Commands.parallel(
-          //m_shooter.slowShootCommand(),
-          //m_hood.autoHoodFromDistanceCommand(
-              //() -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(2.5))));
+              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(kDefaultHopperDistanceMeters))));
     } else {
       m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());
-      //m_driverController.rightBumper().whileTrue(m_shooter.slowShootCommand());
     }
 
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
     m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
-    if (m_vision != null) {
+    m_driverController.x().whileTrue(m_shooter.slowShootCommand());
+    if (hasVision) {
       m_driverController.povUp().whileTrue(new FollowFuelCommand(m_vision, m_robotDrive));
     }
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
     m_driverController.y().whileTrue(m_tomb.tomb());
-    //m_driverController.x().onTrue(m_hood.setHoodAngleCommand(15.0));
-    //m_driverController.b().onTrue(m_hood.setHoodAngleCommand(30.0));
   }
 
   public Command getAutonomousCommand() {
