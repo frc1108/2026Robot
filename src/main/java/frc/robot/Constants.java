@@ -70,7 +70,7 @@ public final class Constants {
     public static final double backTombSpeed = 0.95;
     public static final double frontTombSpeed = -0.95;
     public static final double feederTombSpeed = -0.95;
-    public static final double feederTombVelocityRpm = -1500.0;
+    public static final double feederTombVelocityRpm = 5000.0;
     public static final double reverseFrontTombSpeed = 0.95;
     public static final double reverseBackTombSpeed = -0.95;
   }
