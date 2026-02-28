@@ -107,23 +107,30 @@ public class TombSubsystem extends SubsystemBase {
     System.out.println("Feeder closed-loop set to " + enabled);
   }
 
+  public void startTombMotors() {
+    this.setFrontTombPower(TombConstants.frontTombSpeed);
+    this.setBackTombPower(TombConstants.backTombSpeed);
+    this.setFeederVelocityRpm(TombConstants.feederTombVelocityRpm);
+  }
+
+  public void stopTombMotors() {
+    this.setFrontTombPower(0.0);
+    this.setBackTombPower(0.0);
+    this.setFeederVelocityRpm(0.0);
+  }
+
   public Command tomb() {
     return this.startEnd(
         () -> {
           // Debug/logging and run feeder at configured velocity
           System.out.println("Tomb command START");
-          this.setFrontTombPower(TombConstants.frontTombSpeed);
-          this.setBackTombPower(TombConstants.backTombSpeed);
-          // Run feeder in closed-loop velocity (if configured)
-          this.setFeederVelocityRpm(TombConstants.feederTombVelocityRpm);
+          this.startTombMotors();
 
         },
         () -> {
           // Stop all tomb motors
           System.out.println("Tomb command END");
-          this.setFrontTombPower(0.0);
-          this.setBackTombPower(0.0);
-          this.setFeederVelocityRpm(0.0);
+          this.stopTombMotors();
         });
   }
 

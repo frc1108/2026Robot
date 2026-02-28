@@ -72,6 +72,10 @@ public class ShooterSubsystem extends SubsystemBase {
     autoTargetShooterRpm = clampedRpm;
   }
 
+  public void setShooterTargetRpm(double rpm) {
+    setShooterVelocityRpm(rpm);
+  }
+
   public void stopShooter() {
     setShooterVelocityRpm(0.0);
   }

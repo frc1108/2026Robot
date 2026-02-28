@@ -129,7 +129,7 @@ public final class Constants {
 
     // Distance-based shooter RPM table (interpolated).
     public static final double[] kShooterDistanceMeters = {1.5, 2.5, 3.5, 4.5};
-    public static final double[] kShooterDistanceRpm = {1700.0, 1950.0, 2350.0, 2800.0};
+    public static final double[] kShooterDistanceRpm = {1700.0, 1950.0, 2300.0, 2700.0};
 
     // Distance-to-RPM smoothing for auto/assisted shooting.
     public static final double kAutoShooterDistanceFilterAlpha = 0.1;

@@ -9,14 +9,15 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.AutoConstants;
-import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.AimWhileDrivingCommand;
 import frc.robot.commands.FollowFuelCommand;
@@ -94,6 +95,24 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "AimAtHopperOff",
         Commands.runOnce(this::disableAutoAimOverride));
+    NamedCommands.registerCommand(
+        "Shoot",
+        Commands.startEnd(
+            () -> m_shooter.setShooterTargetRpm(frc.robot.Constants.ShooterConstants.kShooterFullRpm),
+            () -> {},
+            m_shooter));
+    NamedCommands.registerCommand(
+        "StopShoot",
+        Commands.runOnce(m_shooter::stopShooter, m_shooter));
+    NamedCommands.registerCommand(
+        "Tomb",
+        Commands.startEnd(
+            m_tomb::startTombMotors,
+            () -> {},
+            m_tomb));
+    NamedCommands.registerCommand(
+        "StopTomb",
+        Commands.runOnce(m_tomb::stopTombMotors, m_tomb));
   }
 
   private double getAutoAimRotationFeedbackRadPerSec() {
@@ -101,14 +120,16 @@ public class RobotContainer {
       return 0.0;
     }
 
-    double currentHeadingDeg = m_robotDrive.getPose().getRotation().getDegrees();
     var targetHeadingDeg = m_vision.getHopperTargetHeadingDegrees(m_robotDrive.getPose());
     if (targetHeadingDeg.isEmpty()) {
       return 0.0;
     }
 
-    double normalizedRotationCmd =
-        MathUtil.clamp(m_autoAimRotationPid.calculate(currentHeadingDeg, targetHeadingDeg.getAsDouble()), -1.0, 1.0);
+    double currentHeadingDeg = m_robotDrive.getPose().getRotation().getDegrees();
+    double normalizedRotationCmd = MathUtil.clamp(
+        m_autoAimRotationPid.calculate(currentHeadingDeg, targetHeadingDeg.getAsDouble()),
+        -1.0,
+        1.0);
     normalizedRotationCmd *= VisionConstants.kAimRotationSign;
     return normalizedRotationCmd * DriveConstants.kMaxAngularSpeed;
   }
