@@ -31,6 +31,7 @@ public class AimWhileDrivingCommand extends Command {
 
   @Override
   public void initialize() {
+    m_rotationPID.reset();
   }
 
   @Override
@@ -61,6 +62,7 @@ public class AimWhileDrivingCommand extends Command {
       double compensatedTargetHeading = targetHeading.getAsDouble() - leadDegrees;
       compensatedTargetHeading = MathUtil.inputModulus(compensatedTargetHeading, -180.0, 180.0);
       rotation = m_rotationPID.calculate(currentHeading, compensatedTargetHeading);
+      rotation *= VisionConstants.kAimRotationSign;
       rotation = MathUtil.clamp(rotation, -1.0, 1.0);
     } else {
       rotation = rotationInputFallback;

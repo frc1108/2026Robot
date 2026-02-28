@@ -115,8 +115,28 @@ public final class Constants {
     public static final boolean kAutoZeroHoodOnStartup = true;
     public static final double kHoodStartupZeroDegrees = 0.0;
 
-    public static final double kShooterFullSpeed = 0.90;
-    public static final double kShooterSlowSpeed = 0.50;
+    public static final double kShooterFullRpm = 4200.0;
+    public static final double kShooterSlowRpm = 2800.0;
+    public static final double kShooterMaxRpm = 6000.0;
+
+    // TalonFX velocity PID/FF gains for shooter wheels.
+    public static final double kShooterVelocityP = 0.35;
+    public static final double kShooterVelocityI = 0.0;
+    public static final double kShooterVelocityD = 0.0;
+    public static final double kShooterVelocityV = 0.16;
+
+    public static final double kShooterVelocityS = 0.0;
+
+    // Distance-based shooter RPM table (interpolated).
+    public static final double[] kShooterDistanceMeters = {1.5, 2.5, 3.5, 4.5};
+    public static final double[] kShooterDistanceRpm = {1700.0, 1950.0, 2350.0, 2800.0};
+
+    // Distance-to-RPM smoothing for auto/assisted shooting.
+    public static final double kAutoShooterDistanceFilterAlpha = 0.1;
+    public static final double kAutoShooterDistanceDeadbandMeters = 0.05;
+    public static final double kAutoShooterRpmSlewRatePerSec = 10000.0;
+    public static final double kAutoShooterMinCommandStepRpm = 5.0;
+    public static final double kAutoShooterUpdatePeriodSeconds = 0.02;
 
     public static final double[] kHoodDistanceMeters = {1.5, 2.5, 3.5, 4.5};
     public static final double[] kHoodAngleDegrees = {34.0, 28.0, 22.0, 17.0};
@@ -147,7 +167,7 @@ public final class Constants {
     public static final double kShooterYawOffsetDegrees = 90.0;
 
     // Left camera mount pose in robot frame.
-    public static final double kLeftCameraOffsetX = 0.0;   // +X forward (meters)
+    public static final double kLeftCameraOffsetX = 0.165;   // +X forward (meters)
     public static final double kLeftCameraOffsetY = 0.368; // +Y left (meters)
     public static final double kLeftCameraOffsetZ = 0.711; // +Z up (meters)
     public static final double kLeftCameraRotX = 0.0;      // roll about +X (radians)
@@ -181,11 +201,16 @@ public final class Constants {
     public static final double kMaxDistanceMeters = 10.0;
     public static final double kMaxAmbiguity = 0.35;
 
-    public static final double kAimP = 0.02;
+    public static final double kAimP = 0.03;
     public static final double kAimI = 0.0;
-    public static final double kAimD = 0.001;
+    public static final double kAimD = 0.002;
     public static final double kAimingToleranceDegrees = 2.0;
     public static final double kAimingTimeoutSeconds = 2.0;
+    // Rotation command sign to match drivetrain convention.
+    // Use 1.0 for normal PID direction, -1.0 only if your drivetrain is inverted.
+    public static final double kAimRotationSign = 1.0;
+    // Positive = aim more left, negative = aim more right.
+    public static final double kAimHeadingTrimDegrees = -6;
 
     public static final double kBallExitSpeedMetersPerSecond = 9.0;
     public static final double kShotLeadGain = 1.0;

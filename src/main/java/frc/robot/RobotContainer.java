@@ -109,6 +109,7 @@ public class RobotContainer {
 
     double normalizedRotationCmd =
         MathUtil.clamp(m_autoAimRotationPid.calculate(currentHeadingDeg, targetHeadingDeg.getAsDouble()), -1.0, 1.0);
+    normalizedRotationCmd *= VisionConstants.kAimRotationSign;
     return normalizedRotationCmd * DriveConstants.kMaxAngularSpeed;
   }
 
@@ -129,10 +130,9 @@ public class RobotContainer {
     }
 
     if (hasVision) {
-      // Keep hood angle synchronized with measured distance while shooting.
+      // Use measured distance to adjust shooter speed directly.
       m_driverController.rightTrigger().whileTrue(Commands.parallel(
-          m_shooter.shootCommand(),
-          m_hood.autoHoodFromDistanceCommand(
+          m_shooter.autoShootFromDistanceCommand(
               () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(kDefaultHopperDistanceMeters))));
     } else {
       m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());

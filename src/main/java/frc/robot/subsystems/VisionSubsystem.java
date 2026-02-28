@@ -550,6 +550,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     double targetRobotHeadingDeg = MathUtil.inputModulus(
         robotPose.getRotation().getDegrees() + shooterAimErrorDeg, -180.0, 180.0);
+    targetRobotHeadingDeg = MathUtil.inputModulus(
+        targetRobotHeadingDeg + VisionConstants.kAimHeadingTrimDegrees, -180.0, 180.0);
     return OptionalDouble.of(targetRobotHeadingDeg);
   }
 
