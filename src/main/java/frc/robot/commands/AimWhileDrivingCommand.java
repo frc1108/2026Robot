@@ -4,6 +4,7 @@ import java.util.OptionalDouble;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -45,9 +46,15 @@ public class AimWhileDrivingCommand extends Command {
 
     double rotation;
     if (targetHeading.isPresent()) {
-      // Field-relative robot translation velocity from current stick command.
-      double vxField = xSpeed * DriveConstants.kMaxSpeedMetersPerSecond;
-      double vyField = ySpeed * DriveConstants.kMaxSpeedMetersPerSecond;
+      // Use measured chassis velocity (not stick commands) for lead compensation.
+      ChassisSpeeds robotRelativeSpeeds = m_drive.getRobotRelativeSpeeds();
+      Rotation2d robotHeading = m_drive.getPose().getRotation();
+      double vxField =
+          robotRelativeSpeeds.vxMetersPerSecond * robotHeading.getCos()
+              - robotRelativeSpeeds.vyMetersPerSecond * robotHeading.getSin();
+      double vyField =
+          robotRelativeSpeeds.vxMetersPerSecond * robotHeading.getSin()
+              + robotRelativeSpeeds.vyMetersPerSecond * robotHeading.getCos();
 
       double stationaryShooterAxisDeg = targetHeading.getAsDouble() + VisionConstants.kShooterYawOffsetDegrees;
       Rotation2d shooterAxis = Rotation2d.fromDegrees(stationaryShooterAxisDeg);

@@ -129,11 +129,12 @@ public final class Constants {
 
     // Distance-based shooter RPM table (interpolated).
     public static final double[] kShooterDistanceMeters = {1.5, 2.5, 3.5, 4.5};
-    public static final double[] kShooterDistanceRpm = {1700.0, 1950.0, 2300.0, 2700.0};
+    public static final double[] kShooterDistanceRpm = {1700.0, 1800.0, 2200.0, 2600.0};
 
     // Distance-to-RPM smoothing for auto/assisted shooting.
     public static final double kAutoShooterDistanceFilterAlpha = 0.1;
     public static final double kAutoShooterDistanceDeadbandMeters = 0.05;
+    
     public static final double kAutoShooterRpmSlewRatePerSec = 10000.0;
     public static final double kAutoShooterMinCommandStepRpm = 5.0;
     public static final double kAutoShooterUpdatePeriodSeconds = 0.02;
@@ -209,12 +210,10 @@ public final class Constants {
     // Rotation command sign to match drivetrain convention.
     // Use 1.0 for normal PID direction, -1.0 only if your drivetrain is inverted.
     public static final double kAimRotationSign = 1.0;
-    // Positive = aim more left, negative = aim more right.
-    public static final double kAimHeadingTrimDegrees = -6;
 
     public static final double kBallExitSpeedMetersPerSecond = 9.0;
-    public static final double kShotLeadGain = 1.0;
-    public static final double kMaxShotLeadDegrees = 12.0;
+    public static final double kShotLeadGain = 1.35;
+    public static final double kMaxShotLeadDegrees = 18.0;
 
     // Fuel-object follow tuning (PhotonVision object detection / YOLO).
     public static final double kFuelAimP = 0.03;

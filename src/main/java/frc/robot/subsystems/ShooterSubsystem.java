@@ -14,6 +14,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -46,6 +47,8 @@ public class ShooterSubsystem extends SubsystemBase {
           ShooterConstants.kShooterDistanceMeters[i],
           ShooterConstants.kShooterDistanceRpm[i]);
     }
+
+    Shuffleboard.getTab("Shooter").addNumber("Shooter RPM", this::getAverageShooterRpm);
   }
 
   public void setHoodSubsystem(HoodSubsystem hood) {
