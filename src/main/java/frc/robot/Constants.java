@@ -49,6 +49,7 @@ public final class Constants {
 
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
+    public static final int kOperatorControllerPort = 1;
     public static final double kDriveDeadband = 0.05;
   }
 
@@ -102,18 +103,34 @@ public final class Constants {
     public static final int kRightShooterCanId = 32;
 
     public static final int kHoodMotorCanId = 33;
-    public static final double kHoodGearRatio = 36.0;
+    public static final double kHoodGearRatio = 225.0;
     public static final double kMinHoodAngleDegrees = 0.0;
     public static final double kMaxHoodAngleDegrees = 45.0;
 
-    public static final double kHoodP = 0.25;
+    // CTRE PositionVoltage uses motor rotations for position error.
+    // With high gear reduction, keep gains/output conservative to avoid chatter.
+    public static final double kHoodP = 4.0;
     public static final double kHoodI = 0.0;
     public static final double kHoodD = 0.0;
-    public static final double kHoodMaxClosedLoopOutput = 0.35;
-    public static final double kHoodCommandToleranceDegrees = 0.5;
+    public static final double kHoodMaxClosedLoopOutput = 0.55;
+    public static final double kHoodRunSupplyCurrentLimitAmps = 4.0;
+    public static final double kHoodRunStatorCurrentLimitAmps = 5.0;
+    public static final double kHoodHomingSupplyCurrentLimitAmps = 1.25;
+    public static final double kHoodHomingStatorCurrentLimitAmps = 3.0;
+    public static final double kHoodCommandToleranceDegrees = 1.5;
 
     public static final boolean kAutoZeroHoodOnStartup = true;
     public static final double kHoodStartupZeroDegrees = 0.0;
+    public static final double kHoodAutoZeroPercentOutput = -0.30;
+    public static final double kHoodAutoZeroVelocityRps = 3.0;
+    public static final double kHoodAutoZeroVelocityP = 0.25;
+    public static final double kHoodAutoZeroVelocityI = 0.0;
+    public static final double kHoodAutoZeroVelocityD = 0.0;
+    public static final double kHoodAutoZeroVelocityV = 0.12;
+    public static final double kHoodAutoZeroCurrentThresholdAmps = 2.8;
+    public static final double kHoodAutoZeroCurrentDebounceSeconds = 0.15;
+    public static final double kHoodAutoZeroMinRunSeconds = 0.20;
+    public static final double kHoodManualPercentOutput = 0.20;
 
     public static final double kShooterFullRpm = 4200.0;
     public static final double kShooterSlowRpm = 2800.0;
@@ -129,7 +146,9 @@ public final class Constants {
 
     // Distance-based shooter RPM table (interpolated).
     public static final double[] kShooterDistanceMeters = {1.5, 2.5, 3.5, 4.5};
-    public static final double[] kShooterDistanceRpm = {1700.0, 1800.0, 2200.0, 2600.0};
+    //public static final double[] kShooterDistanceMeters = {1.5, 2.5, 3.5, 4.5};
+    public static final double[] kShooterDistanceRpm = {1600.0, 1800.0, 2200.0, 2600.0};
+    //public static final double[] kShooterDistanceRpm = {2450.0, 2450.0, 2450.0, 2450.0};
 
     // Distance-to-RPM smoothing for auto/assisted shooting.
     public static final double kAutoShooterDistanceFilterAlpha = 0.1;
@@ -139,14 +158,14 @@ public final class Constants {
     public static final double kAutoShooterMinCommandStepRpm = 5.0;
     public static final double kAutoShooterUpdatePeriodSeconds = 0.02;
 
-    public static final double[] kHoodDistanceMeters = {1.5, 2.5, 3.5, 4.5};
-    public static final double[] kHoodAngleDegrees = {34.0, 28.0, 22.0, 17.0};
+    public static final double[] kHoodDistanceMeters = {1.5, 2.5, 3.86, 4.93};
+    public static final double[] kHoodAngleDegrees = {0, 0, 0, 0};
 
-    public static final double kAutoHoodDistanceFilterAlpha = 0.1;
-    public static final double kAutoHoodDistanceDeadbandMeters = 0.05;
-    public static final double kAutoHoodAngleSlewRateDegPerSec = 20.0;
-    public static final double kAutoHoodMinCommandStepDeg = 0.4;
-    public static final double kAutoHoodUpdatePeriodSeconds = 0.12;
+    public static final double kAutoHoodDistanceFilterAlpha = 0.03;
+    public static final double kAutoHoodDistanceDeadbandMeters = 0.10;
+    public static final double kAutoHoodAngleSlewRateDegPerSec = 12.0;
+    public static final double kAutoHoodMinCommandStepDeg = 0.2;
+    public static final double kAutoHoodUpdatePeriodSeconds = 0.05;
   }
 
   public static final class VisionConstants {

@@ -11,6 +11,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -48,13 +49,13 @@ public class RobotContainer {
       new PIDController(VisionConstants.kAimP, VisionConstants.kAimI, VisionConstants.kAimD);
   private SendableChooser<Command> m_autoChooser;
   private final CommandXboxController m_driverController = new CommandXboxController(OIConstants.kDriverControllerPort);
+  private final CommandXboxController m_operatorController = new CommandXboxController(OIConstants.kOperatorControllerPort);
 
   public RobotContainer() {
     try {
       m_vision = new VisionSubsystem(m_robotDrive::addVisionMeasurement, m_robotDrive);
     } catch (Exception e) {
-      System.err.println("Failed to initialize VisionSubsystem: " + e.getMessage());
-      e.printStackTrace();
+      DriverStation.reportError("Failed to initialize VisionSubsystem: " + e.getMessage(), false);
     }
 
     m_shooter.setHoodSubsystem(m_hood);
@@ -147,7 +148,14 @@ public class RobotContainer {
     boolean hasVision = m_vision != null;
 
     if (hasVision) {
-      m_driverController.rightBumper().whileTrue(new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController));
+      m_driverController.rightBumper().whileTrue(Commands.parallel(
+          new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController),
+          m_hood.autoHoodFromDistanceCommand(
+              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(kDefaultHopperDistanceMeters))));
+    } else {
+      // Keep hood control available even if vision fails to initialize.
+      m_driverController.rightBumper().whileTrue(
+          m_hood.autoHoodFromDistanceCommand(() -> kDefaultHopperDistanceMeters));
     }
 
     if (hasVision) {
@@ -162,12 +170,30 @@ public class RobotContainer {
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
     m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
     m_driverController.x().whileTrue(m_shooter.slowShootCommand());
+    m_driverController.a().onTrue(Commands.runOnce(m_robotDrive::zeroHeading, m_robotDrive));
     if (hasVision) {
       m_driverController.povUp().whileTrue(new FollowFuelCommand(m_vision, m_robotDrive));
     }
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
     m_driverController.y().whileTrue(m_tomb.tomb());
+
+    m_operatorController.rightBumper().whileTrue(m_hood.hoodUpCommand());
+    m_operatorController.leftBumper().whileTrue(m_hood.hoodDownCommand());
+    m_operatorController.start().onTrue(m_hood.autoZeroByCurrentCommand());
+
+    Shuffleboard.getTab("Hood")
+        .addBoolean("Operator/ConnectedPort1",
+            () -> DriverStation.isJoystickConnected(OIConstants.kOperatorControllerPort));
+    Shuffleboard.getTab("Hood")
+        .addBoolean("Operator/IsXboxPort1",
+            () -> DriverStation.getJoystickIsXbox(OIConstants.kOperatorControllerPort));
+    Shuffleboard.getTab("Hood")
+        .addBoolean("Operator/RB",
+            () -> m_operatorController.rightBumper().getAsBoolean());
+    Shuffleboard.getTab("Hood")
+        .addBoolean("Operator/LB",
+            () -> m_operatorController.leftBumper().getAsBoolean());
   }
 
   public Command getAutonomousCommand() {
@@ -186,3 +212,5 @@ public class RobotContainer {
     return Commands.runOnce(this::disableAutoAimOverride);
   }
 }
+
+

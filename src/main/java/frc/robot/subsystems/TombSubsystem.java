@@ -25,7 +25,6 @@ public class TombSubsystem extends SubsystemBase {
   final SparkMax m_feederTomb = new SparkMax(TombConstants.feederTombCanId, MotorType.kBrushless);
   private SparkClosedLoopController m_feederClosedLoopController;
   private RelativeEncoder m_feederEncoder;
-  private int m_periodicCounter = 0;
   // By default use open-loop percent output for the feeder (maps RPM -> percent)
   // This avoids requiring PID tuning; closed-loop can be enabled later.
   private boolean m_useFeederClosedLoop = false;
@@ -56,18 +55,7 @@ public class TombSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
-    // Periodically print feeder status (throttled)
-    m_periodicCounter++;
-    if (m_periodicCounter % 50 == 0) {
-      double vel = Double.NaN;
-      try {
-        vel = m_feederEncoder.getVelocity();
-      } catch (Exception e) {
-        // ignore if encoder not available
-      }
-      System.out.println(String.format("Feeder status - encoderVel=%.2f rpm, closedLoop=%b", vel, m_useFeederClosedLoop));
-    }
+    // Intentionally quiet: no periodic console logging.
   }
 
   private void setFrontTombPower(double power) {
@@ -104,7 +92,6 @@ public class TombSubsystem extends SubsystemBase {
   /** Enable or disable closed-loop feeder control at runtime. */
   public void enableFeederClosedLoop(boolean enabled) {
     m_useFeederClosedLoop = enabled;
-    System.out.println("Feeder closed-loop set to " + enabled);
   }
 
   public void startTombMotors() {
@@ -122,14 +109,10 @@ public class TombSubsystem extends SubsystemBase {
   public Command tomb() {
     return this.startEnd(
         () -> {
-          // Debug/logging and run feeder at configured velocity
-          System.out.println("Tomb command START");
           this.startTombMotors();
 
         },
         () -> {
-          // Stop all tomb motors
-          System.out.println("Tomb command END");
           this.stopTombMotors();
         });
   }

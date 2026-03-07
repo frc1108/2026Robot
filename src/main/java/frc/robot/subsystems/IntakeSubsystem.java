@@ -26,7 +26,6 @@ public class IntakeSubsystem extends SubsystemBase {
   private RelativeEncoder m_frontEncoder;
   private RelativeEncoder m_backEncoder;
   private boolean m_useIntakeClosedLoop = false; // default to open-loop for safety
-  private int m_periodicCounter = 0;
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
     m_frontIntake.configure(
@@ -53,19 +52,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
-    m_periodicCounter++;
-    if (m_periodicCounter % 100 == 0) {
-      double fvel = Double.NaN;
-      double bvel = Double.NaN;
-      try {
-        fvel = m_frontEncoder.getVelocity();
-        bvel = m_backEncoder.getVelocity();
-      } catch (Exception ignored) {
-      }
-      System.out.println(String.format("Intake status - frontVel=%.2f rpm backVel=%.2f rpm closedLoop=%b", fvel, bvel,
-          m_useIntakeClosedLoop));
-    }
+    // Intentionally quiet: no periodic console logging.
   }
 // Open-loop helpers removed; intake commands now use velocity APIs
   /** Set intake velocity in RPM for both motors (closed-loop when enabled). */
@@ -104,7 +91,6 @@ public class IntakeSubsystem extends SubsystemBase {
   /** Enable/disable intake closed-loop velocity control at runtime. */
   public void enableIntakeClosedLoop(boolean enabled) {
     m_useIntakeClosedLoop = enabled;
-    System.out.println("Intake closed-loop set to " + enabled);
   }
 public Command intake() {
   return this.startEnd(
