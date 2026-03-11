@@ -532,18 +532,14 @@ public class VisionSubsystem extends SubsystemBase {
             VisionConstants.kHopperCenterOffsetLeftMeters,
             Rotation2d.kZero));
 
-    Translation2d shooterOffsetRobot = new Translation2d(
-        VisionConstants.kShooterOffsetForwardMeters,
-        VisionConstants.kShooterOffsetLeftMeters);
-    Translation2d shooterPositionField = robotPose.getTranslation().plus(
-        shooterOffsetRobot.rotateBy(robotPose.getRotation()));
+    Translation2d shooterPositionField = getShooterPositionField(robotPose);
 
     double lineToHopperDeg = Math.toDegrees(Math.atan2(
         hopperCenterPose.getY() - shooterPositionField.getY(),
         hopperCenterPose.getX() - shooterPositionField.getX()));
 
     double shooterFacingDeg =
-        robotPose.getRotation().getDegrees() + VisionConstants.kShooterYawOffsetDegrees;
+        robotPose.getRotation().getDegrees() + VisionConstants.getShooterAxisAngleDegrees();
     // Compute heading error in shooter-axis space, then convert back to robot heading.
     double shooterAimErrorDeg =
         MathUtil.inputModulus(lineToHopperDeg - shooterFacingDeg, -180.0, 180.0);
@@ -565,7 +561,16 @@ public class VisionSubsystem extends SubsystemBase {
             VisionConstants.kHopperCenterOffsetLeftMeters,
             Rotation2d.kZero));
 
-    return OptionalDouble.of(robotPose.getTranslation().getDistance(hopperCenterPose.getTranslation()));
+    Translation2d shooterPositionField = getShooterPositionField(robotPose);
+    return OptionalDouble.of(shooterPositionField.getDistance(hopperCenterPose.getTranslation()));
+  }
+
+  private static Translation2d getShooterPositionField(Pose2d robotPose) {
+    Translation2d shooterOffsetRobot = new Translation2d(
+        VisionConstants.kShooterOffsetForwardMeters,
+        VisionConstants.kShooterOffsetLeftMeters);
+    return robotPose.getTranslation().plus(
+        shooterOffsetRobot.rotateBy(robotPose.getRotation()));
   }
 
   public Pose3d getEstimated3dPose() {

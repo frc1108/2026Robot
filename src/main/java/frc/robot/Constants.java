@@ -184,7 +184,14 @@ public final class Constants {
     // Shooter mount geometry in robot frame (+X forward, +Y left).
     public static final double kShooterOffsetForwardMeters = -0.2;
     public static final double kShooterOffsetLeftMeters = 0.2;
-    public static final double kShooterYawOffsetDegrees = 90.0;
+    // Shooter axis direction in robot frame (+X forward, +Y left).
+    // This defines where the shooter points without using a fixed yaw offset.
+    public static final double kShooterAxisForwardMeters = 0.35;
+    public static final double kShooterAxisLeftMeters = 0.35;
+
+    public static double getShooterAxisAngleDegrees() {
+      return Math.toDegrees(Math.atan2(kShooterAxisLeftMeters, kShooterAxisForwardMeters));
+    }
 
     // Left camera mount pose in robot frame.
     public static final double kLeftCameraOffsetX = 0.165;   // +X forward (meters)

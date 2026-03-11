@@ -56,7 +56,8 @@ public class AimWhileDrivingCommand extends Command {
           robotRelativeSpeeds.vxMetersPerSecond * robotHeading.getSin()
               + robotRelativeSpeeds.vyMetersPerSecond * robotHeading.getCos();
 
-      double stationaryShooterAxisDeg = targetHeading.getAsDouble() + VisionConstants.kShooterYawOffsetDegrees;
+      double stationaryShooterAxisDeg =
+          targetHeading.getAsDouble() + VisionConstants.getShooterAxisAngleDegrees();
       Rotation2d shooterAxis = Rotation2d.fromDegrees(stationaryShooterAxisDeg);
       double vPerpMetersPerSec = (-shooterAxis.getSin() * vxField) + (shooterAxis.getCos() * vyField);
 
