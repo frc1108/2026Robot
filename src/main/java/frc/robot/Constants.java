@@ -76,6 +76,12 @@ public final class Constants {
     public static final double reverseBackTombSpeed = -0.95;
   }
 
+  public static final class ClimberConstants {
+    public static final int frontClimbercanid = 23;
+    public static final int backClimbercanid = 24;
+    public static final double climberSpeed = 0.5;
+  }
+
   public static final class AutoConstants {
     public static final double kMaxSpeedMetersPerSecond = 3;
     public static final double kMaxAccelerationMetersPerSecondSquared = 3;
