@@ -152,6 +152,16 @@ public class VisionSubsystem extends SubsystemBase {
   public void periodic() {
     maybeApplyStartupCameraPulse();
 
+    publishCameraConnectionStatus();
+
+    // Always update robot pose on the Field2d so the icon moves smoothly.
+    fuelHeatmapField.setRobotPose(drive.getPose());
+    fuelHeatmapField.getObject("Robot").setPose(drive.getPose());
+    SmartDashboard.putData("Fuel Heatmap", fuelHeatmapField);
+    SmartDashboard.putNumber("Vision/RobotPoseX", drive.getPose().getX());
+    SmartDashboard.putNumber("Vision/RobotPoseY", drive.getPose().getY());
+    SmartDashboard.putNumber("Vision/RobotPoseDeg", drive.getPose().getRotation().getDegrees());
+
     Pose2d fallbackPose = drive.getPose();
     // Use fused drive pose until we have at least one vision estimate.
     Pose2d robotPoseForFiltering =
@@ -236,6 +246,14 @@ public class VisionSubsystem extends SubsystemBase {
     updateFuelTargeting();
   }
 
+  private void publishCameraConnectionStatus() {
+    for (PhotonCamera camera : m_photonCameras) {
+      String name = camera.getName();
+      SmartDashboard.putBoolean("Vision/CameraConnected/" + name, camera.isConnected());
+    }
+    SmartDashboard.putBoolean("Vision/CameraConnected/" + m_fuelCamera.getName(), m_fuelCamera.isConnected());
+  }
+
   private void maybeApplyStartupCameraPulse() {
     if (!VisionConstants.kRunCameraStartupReinitPulse || cameraStartupPulseApplied) {
       return;
@@ -313,7 +331,6 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     lastHeatmapPublishTimestampSec = now;
-    fuelHeatmapField.setRobotPose(drive.getPose());
     publishFuelHeatmapHotspots();
   }
 
@@ -322,8 +339,8 @@ public class VisionSubsystem extends SubsystemBase {
         .add("Fuel Heatmap", fuelHeatmapField)
         .withProperties(Map.of(
             "Field", VisionConstants.kFuelHeatmapFieldBackground,
-            "Robot Width", 0.8,
-            "Robot Length", 0.8))
+            "Robot Width", VisionConstants.kRobotWidthMeters,
+            "Robot Length", VisionConstants.kRobotLengthMeters))
         .withPosition(0, 0)
         .withSize(7, 4);
     SmartDashboard.putData("Fuel Heatmap", fuelHeatmapField);

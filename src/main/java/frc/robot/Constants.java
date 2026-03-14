@@ -264,6 +264,9 @@ public final class Constants {
     public static final int kFuelHeatmapCellsY = 18;
     // Requested field image/background name for Field2d widgets.
     public static final String kFuelHeatmapFieldBackground = "2026RebuiltWelded";
+    // Robot dimensions for Field2d display.
+    public static final double kRobotLengthMeters = 0.8;
+    public static final double kRobotWidthMeters = 0.8;
     // Master enable for heatmap publishing to dashboards.
     public static final boolean kEnableFuelHeatmap = true;
     // Limit dashboard update rate to reduce client-side lag.
