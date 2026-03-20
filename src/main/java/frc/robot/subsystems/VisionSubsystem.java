@@ -58,6 +58,9 @@ public class VisionSubsystem extends SubsystemBase {
   @Logged private double hopperDistance = 0.0;
   @Logged private double hopperAmbiguity = 1.0;
   @Logged private boolean hopperVisible = false;
+  @Logged private double autoAlignReferenceX = 0.0;
+  @Logged private double autoAlignReferenceY = 0.0;
+  @Logged private double autoAlignTargetHeadingDeg = 0.0;
   @Logged private boolean fuelVisible = false;
   @Logged private double fuelYaw = 0.0;
   @Logged private double fuelPitch = 0.0;
@@ -343,6 +346,7 @@ public class VisionSubsystem extends SubsystemBase {
             "Robot Length", VisionConstants.kRobotLengthMeters))
         .withPosition(0, 0)
         .withSize(7, 4);
+    Shuffleboard.getTab("Vision").addNumber("Hopper Distance (m)", this::getHopperDistance);
     SmartDashboard.putData("Fuel Heatmap", fuelHeatmapField);
   }
 
@@ -549,11 +553,13 @@ public class VisionSubsystem extends SubsystemBase {
             VisionConstants.kHopperCenterOffsetLeftMeters,
             Rotation2d.kZero));
 
-    Translation2d shooterPositionField = getShooterPositionField(robotPose);
+    Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
+    autoAlignReferenceX = autoAlignReferenceField.getX();
+    autoAlignReferenceY = autoAlignReferenceField.getY();
 
     double lineToHopperDeg = Math.toDegrees(Math.atan2(
-        hopperCenterPose.getY() - shooterPositionField.getY(),
-        hopperCenterPose.getX() - shooterPositionField.getX()));
+        hopperCenterPose.getY() - autoAlignReferenceField.getY(),
+        hopperCenterPose.getX() - autoAlignReferenceField.getX()));
 
     double shooterFacingDeg =
         robotPose.getRotation().getDegrees() + VisionConstants.getShooterAxisAngleDegrees();
@@ -563,6 +569,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     double targetRobotHeadingDeg = MathUtil.inputModulus(
         robotPose.getRotation().getDegrees() + shooterAimErrorDeg, -180.0, 180.0);
+    autoAlignTargetHeadingDeg = targetRobotHeadingDeg;
     return OptionalDouble.of(targetRobotHeadingDeg);
   }
 
@@ -578,16 +585,16 @@ public class VisionSubsystem extends SubsystemBase {
             VisionConstants.kHopperCenterOffsetLeftMeters,
             Rotation2d.kZero));
 
-    Translation2d shooterPositionField = getShooterPositionField(robotPose);
-    return OptionalDouble.of(shooterPositionField.getDistance(hopperCenterPose.getTranslation()));
+    Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
+    return OptionalDouble.of(autoAlignReferenceField.getDistance(hopperCenterPose.getTranslation()));
   }
 
-  private static Translation2d getShooterPositionField(Pose2d robotPose) {
-    Translation2d shooterOffsetRobot = new Translation2d(
-        VisionConstants.kShooterOffsetForwardMeters,
-        VisionConstants.kShooterOffsetLeftMeters);
+  private static Translation2d getAutoAlignReferenceField(Pose2d robotPose) {
+    Translation2d autoAlignOffsetRobot = new Translation2d(
+        VisionConstants.kAutoAlignCenterShiftForwardMeters,
+        VisionConstants.kAutoAlignCenterShiftLeftMeters);
     return robotPose.getTranslation().plus(
-        shooterOffsetRobot.rotateBy(robotPose.getRotation()));
+        autoAlignOffsetRobot.rotateBy(robotPose.getRotation()));
   }
 
   public Pose3d getEstimated3dPose() {

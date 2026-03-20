@@ -70,8 +70,8 @@ public final class Constants {
     public static final int feederTombCanId = 25;
     public static final double backTombSpeed = 0.95;
     public static final double frontTombSpeed = -0.95;
-    public static final double feederTombSpeed = -0.95;
-    public static final double feederTombVelocityRpm = 5000.0;
+    public static final double feederTombSpeed = 0.95;
+    public static final double feederTombVelocityRpm = -4000.0;
     public static final double reverseFrontTombSpeed = 0.95;
     public static final double reverseBackTombSpeed = -0.95;
   }
@@ -145,17 +145,17 @@ public final class Constants {
     public static final double kShooterVelocityS = 0.0;
 
     // Distance-based shooter RPM table (interpolated).
-    public static final double[] kShooterDistanceMeters = {1.5, 2.5, 3.5, 4.5};
+    public static final double[] kShooterDistanceMeters = {1.5, 2, 2.5, 3.5, 4, 4.5};
     //public static final double[] kShooterDistanceMeters = {1.5, 2.5, 3.5, 4.5};
-    public static final double[] kShooterDistanceRpm = {1600.0, 1800.0, 2200.0, 2600.0};
+    public static final double[] kShooterDistanceRpm = {1600.0, 1675.0, 1845.0, 2200.0, 2700.0, 3300.0};
     //public static final double[] kShooterDistanceRpm = {2450.0, 2450.0, 2450.0, 2450.0};
-
+    //Actual Numbers: 1.5m=1750rpm, 2m=1850rpm, 2.5m=2000rpm, 3m=2200rpm, 3.5m=2375rpm, 4m=3100rpm, 4.5m=3800rpm
     // Distance-to-RPM smoothing for auto/assisted shooting.
-    public static final double kAutoShooterDistanceFilterAlpha = 0.1;
+    public static final double kAutoShooterDistanceFilterAlpha = 0.01;
     public static final double kAutoShooterDistanceDeadbandMeters = 0.05;
     
     public static final double kAutoShooterRpmSlewRatePerSec = 10000.0;
-    public static final double kAutoShooterMinCommandStepRpm = 5.0;
+    public static final double kAutoShooterMinCommandStepRpm = 1.0;
     public static final double kAutoShooterUpdatePeriodSeconds = 0.02;
 
     public static final double[] kHoodDistanceMeters = {1.5, 2.5, 3.86, 4.93};
@@ -178,16 +178,18 @@ public final class Constants {
 
     // Hopper targeting.
     public static final int kHopperTagId = 26;
-    public static final double kHopperCenterOffsetForwardMeters = -0.305;
-    public static final double kHopperCenterOffsetLeftMeters = 0.0;
+    public static final double kHopperCenterOffsetForwardMeters = Units.inchesToMeters(-24);
+    public static final double kHopperCenterOffsetLeftMeters = 0;
 
-    // Shooter mount geometry in robot frame (+X forward, +Y left).
-    public static final double kShooterOffsetForwardMeters = -0.2;
-    public static final double kShooterOffsetLeftMeters = 0.2;
+    // Auto-align uses a shifted effective robot center instead of the true robot center.
+    // Negative X moves the effective shot origin toward the back of the robot.
+    public static final double kAutoAlignCenterShiftForwardMeters = Units.inchesToMeters(-7);
+    public static final double kAutoAlignCenterShiftLeftMeters = Units.inchesToMeters(7);
     // Shooter axis direction in robot frame (+X forward, +Y left).
-    // This defines where the shooter points without using a fixed yaw offset.
-    public static final double kShooterAxisForwardMeters = 0.35;
-    public static final double kShooterAxisLeftMeters = 0.35;
+    // The shooter is mounted fixed relative to the robot; the non-constant correction comes from
+    // the off-center shot origin above, not from changing this direction.
+    public static final double kShooterAxisForwardMeters = 0.0;
+    public static final double kShooterAxisLeftMeters = 1.0;
 
     public static double getShooterAxisAngleDegrees() {
       return Math.toDegrees(Math.atan2(kShooterAxisLeftMeters, kShooterAxisForwardMeters));
@@ -231,7 +233,7 @@ public final class Constants {
     public static final double kAimP = 0.03;
     public static final double kAimI = 0.0;
     public static final double kAimD = 0.002;
-    public static final double kAimingToleranceDegrees = 2.0;
+    public static final double kAimingToleranceDegrees = 0;
     public static final double kAimingTimeoutSeconds = 2.0;
     // Rotation command sign to match drivetrain convention.
     // Use 1.0 for normal PID direction, -1.0 only if your drivetrain is inverted.

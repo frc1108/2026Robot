@@ -30,6 +30,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private final InterpolatingDoubleTreeMap m_distanceToRpmMap = new InterpolatingDoubleTreeMap();
   private final int m_tablePairCount;
   private double m_filteredDistanceMeters = Double.NaN;
+  @Logged private double m_rawDistanceMeters = Double.NaN;
   private double m_lastAutoCommandRpm = Double.NaN;
   private double m_lastAutoUpdateTimestampSec = Double.NaN;
   @Logged private double autoTargetShooterRpm = 0.0;
@@ -49,6 +50,8 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     Shuffleboard.getTab("Shooter").addNumber("Shooter RPM", this::getAverageShooterRpm);
+    Shuffleboard.getTab("Shooter").addNumber("Shooter Distance Raw (m)", this::getRawDistanceMeters);
+    Shuffleboard.getTab("Shooter").addNumber("Shooter Distance Filtered (m)", this::getFilteredDistanceMeters);
   }
 
   public void setHoodSubsystem(HoodSubsystem hood) {
@@ -94,6 +97,14 @@ public class ShooterSubsystem extends SubsystemBase {
   public double getAverageShooterRpm() {
     return (getLeftShooterRpm() + getRightShooterRpm()) / 2.0;
   }
+  
+  public double getRawDistanceMeters() {
+    return m_rawDistanceMeters;
+  }
+
+  public double getFilteredDistanceMeters() {
+    return m_filteredDistanceMeters;
+  }
 
   private Command runShooterAtRpm(double rpm) {
     return startEnd(() -> setShooterVelocityRpm(rpm), this::stopShooter);
@@ -133,7 +144,55 @@ public class ShooterSubsystem extends SubsystemBase {
     if (m_tablePairCount == 0) {
       return ShooterConstants.kShooterFullRpm;
     }
-    return m_distanceToRpmMap.get(distanceMeters);
+    return interpolateShooterRpm(distanceMeters);
+  }
+
+  private double interpolateShooterRpm(double distanceMeters) {
+    double[] distances = ShooterConstants.kShooterDistanceMeters;
+    double[] rpms = ShooterConstants.kShooterDistanceRpm;
+    int count = m_tablePairCount;
+
+    if (count == 1) {
+      return rpms[0];
+    }
+
+    if (distanceMeters <= distances[0]) {
+      return rpms[0];
+    }
+    if (distanceMeters >= distances[count - 1]) {
+      return rpms[count - 1];
+    }
+
+    int upper = 1;
+    while (upper < count && distanceMeters > distances[upper]) {
+      upper++;
+    }
+    int lower = Math.max(0, upper - 1);
+
+    if (count < 3) {
+      double t = (distanceMeters - distances[lower]) / (distances[upper] - distances[lower]);
+      return rpms[lower] + t * (rpms[upper] - rpms[lower]);
+    }
+
+    int i0 = Math.max(0, lower - 1);
+    int i1 = lower;
+    int i2 = Math.min(count - 1, upper + 1);
+    if (i2 == i1) {
+      i0 = Math.max(0, i1 - 2);
+    }
+
+    double x0 = distances[i0];
+    double x1 = distances[i1];
+    double x2 = distances[i2];
+    double y0 = rpms[i0];
+    double y1 = rpms[i1];
+    double y2 = rpms[i2];
+
+    double x = distanceMeters;
+    double l0 = ((x - x1) * (x - x2)) / ((x0 - x1) * (x0 - x2));
+    double l1 = ((x - x0) * (x - x2)) / ((x1 - x0) * (x1 - x2));
+    double l2 = ((x - x0) * (x - x1)) / ((x2 - x0) * (x2 - x1));
+    return (y0 * l0) + (y1 * l1) + (y2 * l2);
   }
 
   public Command autoShootFromDistanceCommand(DoubleSupplier distanceMetersSupplier) {
@@ -150,6 +209,8 @@ public class ShooterSubsystem extends SubsystemBase {
       m_lastAutoUpdateTimestampSec = nowSec;
 
       double rawDistance = distanceMetersSupplier.getAsDouble();
+      m_rawDistanceMeters = rawDistance;
+      // Keep the filter updated for telemetry, but use raw distance for exact interpolation.
       if (Double.isNaN(m_filteredDistanceMeters)) {
         m_filteredDistanceMeters = rawDistance;
       } else {
@@ -159,7 +220,7 @@ public class ShooterSubsystem extends SubsystemBase {
         }
       }
 
-      double desiredRpm = getAutoShooterRpmForDistance(m_filteredDistanceMeters);
+      double desiredRpm = getAutoShooterRpmForDistance(rawDistance);
       if (Double.isNaN(m_lastAutoCommandRpm)) {
         m_lastAutoCommandRpm = getAverageShooterRpm();
       }
