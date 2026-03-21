@@ -148,4 +148,10 @@ public class TombSubsystem extends SubsystemBase {
           () -> this.setFeederVelocityRpm(0.0));
     }
 
+    public Command reverseFeederCommand() {
+      return this.startEnd(
+          () -> this.setFeederVelocityRpm(TombConstants.reverseFeederTombVelocityRpm),
+          () -> this.setFeederVelocityRpm(0.0));
+    }
+
 }

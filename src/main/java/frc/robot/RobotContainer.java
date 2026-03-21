@@ -7,6 +7,7 @@ package frc.robot;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,6 +17,7 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.DriveConstants;
@@ -32,10 +34,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import java.util.function.DoubleSupplier;
 
 @Logged
 public class RobotContainer {
-  private static final String kDefaultAutoName = "Hopper Test";
+  private static final String kDefaultAutoName = "BR";
   private static final double kDefaultHopperDistanceMeters = 2.5;
 
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
@@ -45,6 +48,9 @@ public class RobotContainer {
   private final TombSubsystem m_tomb = new TombSubsystem();
   private VisionSubsystem m_vision;
   private boolean m_autoAimAtHopperEnabled = false;
+  private Command m_activeAutoShootCommand;
+  private Command m_activeAutoIntakeCommand;
+  private Command m_activeAutoTombCommand;
   private final PIDController m_autoAimRotationPid =
       new PIDController(VisionConstants.kAimP, VisionConstants.kAimI, VisionConstants.kAimD);
   private SendableChooser<Command> m_autoChooser;
@@ -86,6 +92,21 @@ public class RobotContainer {
   }
 
   private void configurePathPlannerNamedCommands() {
+    DoubleSupplier hopperDistanceSupplier = createHopperDistanceSupplier();
+
+    new EventTrigger("Shoot").onTrue(Commands.runOnce(() -> startAutoShootCommand(hopperDistanceSupplier)));
+    new EventTrigger("StopShoot").onTrue(Commands.runOnce(this::stopAutoShootCommand));
+    new EventTrigger("Intake").onTrue(Commands.runOnce(this::startAutoIntakeCommand));
+    new EventTrigger("StopIntake").onTrue(Commands.runOnce(this::stopAutoIntakeCommand));
+    new EventTrigger("Tomb").onTrue(Commands.runOnce(this::startAutoTombCommand));
+    new EventTrigger("StopTomb").onTrue(Commands.runOnce(this::stopAutoTombCommand));
+    new EventTrigger("AimAtHopperOn").onTrue(Commands.runOnce(() -> {
+      m_autoAimAtHopperEnabled = true;
+      m_autoAimRotationPid.reset();
+      PPHolonomicDriveController.overrideRotationFeedback(this::getAutoAimRotationFeedbackRadPerSec);
+    }));
+    new EventTrigger("AimAtHopperOff").onTrue(Commands.runOnce(this::disableAutoAimOverride));
+
     NamedCommands.registerCommand(
         "AimAtHopperOn",
         Commands.runOnce(() -> {
@@ -98,22 +119,22 @@ public class RobotContainer {
         Commands.runOnce(this::disableAutoAimOverride));
     NamedCommands.registerCommand(
         "Shoot",
-        Commands.startEnd(
-            () -> m_shooter.setShooterTargetRpm(frc.robot.Constants.ShooterConstants.kShooterFullRpm),
-            () -> {},
-            m_shooter));
+        Commands.runOnce(() -> startAutoShootCommand(hopperDistanceSupplier)));
     NamedCommands.registerCommand(
         "StopShoot",
-        Commands.runOnce(m_shooter::stopShooter, m_shooter));
+        Commands.runOnce(this::stopAutoShootCommand));
+    NamedCommands.registerCommand(
+        "Intake",
+        Commands.runOnce(this::startAutoIntakeCommand));
+    NamedCommands.registerCommand(
+        "StopIntake",
+        Commands.runOnce(this::stopAutoIntakeCommand));
     NamedCommands.registerCommand(
         "Tomb",
-        Commands.startEnd(
-            m_tomb::startTombMotors,
-            () -> {},
-            m_tomb));
+        Commands.runOnce(this::startAutoTombCommand));
     NamedCommands.registerCommand(
         "StopTomb",
-        Commands.runOnce(m_tomb::stopTombMotors, m_tomb));
+        Commands.runOnce(this::stopAutoTombCommand));
   }
 
   private double getAutoAimRotationFeedbackRadPerSec() {
@@ -144,27 +165,33 @@ public class RobotContainer {
     disableAutoAimOverride();
   }
 
+  public void stopAutoNamedCommands() {
+    stopAutoShootCommand();
+    stopAutoIntakeCommand();
+    stopAutoTombCommand();
+  }
+
   private void configureButtonBindings() {
     boolean hasVision = m_vision != null;
+    DoubleSupplier hopperDistanceSupplier = createHopperDistanceSupplier();
 
     if (hasVision) {
       m_driverController.rightBumper().whileTrue(Commands.parallel(
           new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController),
-          m_hood.autoHoodFromDistanceCommand(
-              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(kDefaultHopperDistanceMeters))));
+          m_hood.autoHoodFromDistanceCommand(hopperDistanceSupplier)));
     } else {
       // Keep hood control available even if vision fails to initialize.
       m_driverController.rightBumper().whileTrue(
-          m_hood.autoHoodFromDistanceCommand(() -> kDefaultHopperDistanceMeters));
+          m_hood.autoHoodFromDistanceCommand(hopperDistanceSupplier));
     }
 
     if (hasVision) {
       // Use measured distance to adjust shooter speed directly.
       m_driverController.rightTrigger().whileTrue(Commands.parallel(
-          m_shooter.autoShootFromDistanceCommand(
-              () -> m_vision.getHopperCenterDistanceMeters(m_robotDrive.getPose()).orElse(kDefaultHopperDistanceMeters))));
+          m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier)));
     } else {
-      m_driverController.rightTrigger().whileTrue(m_shooter.shootCommand());
+      m_driverController.rightTrigger().whileTrue(
+          m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier));
     }
 
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
@@ -177,9 +204,11 @@ public class RobotContainer {
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
     m_driverController.y().whileTrue(m_tomb.tomb());
+    m_driverController.b().whileTrue(m_tomb.reverseFeederCommand());
 
     m_operatorController.rightBumper().whileTrue(m_hood.hoodUpCommand());
     m_operatorController.leftBumper().whileTrue(m_hood.hoodDownCommand());
+    m_operatorController.a().whileTrue(m_tomb.reverseFeederCommand());
     m_operatorController.start().onTrue(m_hood.autoZeroByCurrentCommand());
 
     Shuffleboard.getTab("Hood")
@@ -199,17 +228,71 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     if (m_vision != null && AutoConstants.kUseFuelObjectAuto) {
       return new FollowFuelCommand(m_vision, m_robotDrive)
+          .beforeStarting(this::stopAutoNamedCommands)
           .withTimeout(AutoConstants.kFuelAutoTimeoutSeconds)
           .beforeStarting(this::disableAutoAimOverride)
-          .andThen(Commands.runOnce(this::disableAutoAimOverride));
+          .andThen(Commands.runOnce(this::disableAutoAimOverride))
+          .andThen(Commands.runOnce(this::stopAutoNamedCommands));
     }
 
     if (m_autoChooser != null && m_autoChooser.getSelected() != null) {
       return m_autoChooser.getSelected()
+          .beforeStarting(this::stopAutoNamedCommands)
           .beforeStarting(this::disableAutoAimOverride)
-          .andThen(Commands.runOnce(this::disableAutoAimOverride));
+          .andThen(Commands.runOnce(this::disableAutoAimOverride))
+          .andThen(Commands.runOnce(this::stopAutoNamedCommands));
     }
-    return Commands.runOnce(this::disableAutoAimOverride);
+    return Commands.runOnce(() -> {
+      disableAutoAimOverride();
+      stopAutoNamedCommands();
+    });
+  }
+
+  private DoubleSupplier createHopperDistanceSupplier() {
+    return () -> VisionSubsystem.getEstimatedHopperCenterDistanceMeters(m_robotDrive.getPose())
+        .orElse(kDefaultHopperDistanceMeters);
+  }
+
+  private void startAutoShootCommand(DoubleSupplier hopperDistanceSupplier) {
+    stopAutoShootCommand();
+    m_activeAutoShootCommand = m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier);
+    CommandScheduler.getInstance().schedule(m_activeAutoShootCommand);
+  }
+
+  private void stopAutoShootCommand() {
+    if (m_activeAutoShootCommand != null) {
+      m_activeAutoShootCommand.cancel();
+      m_activeAutoShootCommand = null;
+    }
+    m_shooter.stopShooter();
+  }
+
+  private void startAutoIntakeCommand() {
+    stopAutoIntakeCommand();
+    m_activeAutoIntakeCommand = m_intake.intake();
+    CommandScheduler.getInstance().schedule(m_activeAutoIntakeCommand);
+  }
+
+  private void stopAutoIntakeCommand() {
+    if (m_activeAutoIntakeCommand != null) {
+      m_activeAutoIntakeCommand.cancel();
+      m_activeAutoIntakeCommand = null;
+    }
+    m_intake.stopIntakeMotors();
+  }
+
+  private void startAutoTombCommand() {
+    stopAutoTombCommand();
+    m_activeAutoTombCommand = m_tomb.tomb();
+    CommandScheduler.getInstance().schedule(m_activeAutoTombCommand);
+  }
+
+  private void stopAutoTombCommand() {
+    if (m_activeAutoTombCommand != null) {
+      m_activeAutoTombCommand.cancel();
+      m_activeAutoTombCommand = null;
+    }
+    m_tomb.stopTombMotors();
   }
 }
 

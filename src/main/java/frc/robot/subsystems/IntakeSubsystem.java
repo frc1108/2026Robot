@@ -92,14 +92,24 @@ public class IntakeSubsystem extends SubsystemBase {
   public void enableIntakeClosedLoop(boolean enabled) {
     m_useIntakeClosedLoop = enabled;
   }
+
+  public void startIntakeMotors() {
+    setIntakeVelocityRpm(
+        IntakeConstants.intakeFrontVelocityRpm,
+        IntakeConstants.intakeBackVelocityRpm);
+  }
+
+  public void stopIntakeMotors() {
+    setIntakeVelocityRpm(0, 0);
+  }
+
 public Command intake() {
   return this.startEnd(
     () -> {
-      // Run intake at configured front/back velocities
-  this.setIntakeVelocityRpm(IntakeConstants.intakeFrontVelocityRpm, IntakeConstants.intakeBackVelocityRpm);
+      startIntakeMotors();
     },
     () -> {
-      this.setIntakeVelocityRpm(0, 0);
+      stopIntakeMotors();
     });
 }
   

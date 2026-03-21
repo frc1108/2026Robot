@@ -151,9 +151,16 @@ public class ShooterSubsystem extends SubsystemBase {
     double[] distances = ShooterConstants.kShooterDistanceMeters;
     double[] rpms = ShooterConstants.kShooterDistanceRpm;
     int count = m_tablePairCount;
+    final double epsilon = 1e-9;
 
     if (count == 1) {
       return rpms[0];
+    }
+
+    for (int i = 0; i < count; i++) {
+      if (Math.abs(distanceMeters - distances[i]) < epsilon) {
+        return rpms[i];
+      }
     }
 
     if (distanceMeters <= distances[0]) {
@@ -174,11 +181,21 @@ public class ShooterSubsystem extends SubsystemBase {
       return rpms[lower] + t * (rpms[upper] - rpms[lower]);
     }
 
-    int i0 = Math.max(0, lower - 1);
-    int i1 = lower;
-    int i2 = Math.min(count - 1, upper + 1);
-    if (i2 == i1) {
-      i0 = Math.max(0, i1 - 2);
+    int i0;
+    int i1;
+    int i2;
+    if (lower == 0) {
+      i0 = 0;
+      i1 = 1;
+      i2 = 2;
+    } else if (upper == count - 1) {
+      i0 = count - 3;
+      i1 = count - 2;
+      i2 = count - 1;
+    } else {
+      i0 = lower - 1;
+      i1 = lower;
+      i2 = upper;
     }
 
     double x0 = distances[i0];

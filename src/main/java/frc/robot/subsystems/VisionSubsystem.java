@@ -40,6 +40,7 @@ import frc.robot.Constants.VisionConstants;
 
 @Logged
 public class VisionSubsystem extends SubsystemBase {
+  private static final AprilTagFieldLayout kFieldLayout = loadFieldLayout();
   private final List<PhotonCamera> m_photonCameras = new ArrayList<>();
   private final List<PhotonPoseEstimator> m_poseEstimators = new ArrayList<>();
   private final AprilTagFieldLayout m_fieldLayout;
@@ -74,12 +75,20 @@ public class VisionSubsystem extends SubsystemBase {
   private final double startupTimestampSec = Timer.getFPGATimestamp();
   private boolean cameraStartupPulseApplied = false;
 
+  private static AprilTagFieldLayout loadFieldLayout() {
+    try {
+      return AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to load 2026 field layout", e);
+    }
+  }
+
   public VisionSubsystem(
       BiConsumer<Pose2d, Double> consumer,
       DriveSubsystem drive,
       String leftSideCamera,
       Transform3d cameraOffset) throws IOException {
-    m_fieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
+    m_fieldLayout = kFieldLayout;
     m_consumer = consumer;
     this.drive = drive;
 
@@ -94,7 +103,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive) throws IOException {
-    m_fieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2026RebuiltWelded.m_resourceFile);
+    m_fieldLayout = kFieldLayout;
     m_consumer = consumer;
     this.drive = drive;
 
@@ -542,24 +551,18 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   public OptionalDouble getHopperTargetHeadingDegrees(Pose2d robotPose) {
-    var hopperTagPose = m_fieldLayout.getTagPose(VisionConstants.kHopperTagId);
-    if (hopperTagPose.isEmpty()) {
+    Optional<Pose2d> hopperCenterPose = getHopperCenterPose();
+    if (hopperCenterPose.isEmpty()) {
       return OptionalDouble.empty();
     }
-
-    Pose2d hopperCenterPose = hopperTagPose.get().toPose2d().transformBy(
-        new Transform2d(
-            VisionConstants.kHopperCenterOffsetForwardMeters,
-            VisionConstants.kHopperCenterOffsetLeftMeters,
-            Rotation2d.kZero));
 
     Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
     autoAlignReferenceX = autoAlignReferenceField.getX();
     autoAlignReferenceY = autoAlignReferenceField.getY();
 
     double lineToHopperDeg = Math.toDegrees(Math.atan2(
-        hopperCenterPose.getY() - autoAlignReferenceField.getY(),
-        hopperCenterPose.getX() - autoAlignReferenceField.getX()));
+        hopperCenterPose.get().getY() - autoAlignReferenceField.getY(),
+        hopperCenterPose.get().getX() - autoAlignReferenceField.getX()));
 
     double shooterFacingDeg =
         robotPose.getRotation().getDegrees() + VisionConstants.getShooterAxisAngleDegrees();
@@ -574,19 +577,13 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   public OptionalDouble getHopperCenterDistanceMeters(Pose2d robotPose) {
-    var hopperTagPose = m_fieldLayout.getTagPose(VisionConstants.kHopperTagId);
-    if (hopperTagPose.isEmpty()) {
+    Optional<Pose2d> hopperCenterPose = getHopperCenterPose();
+    if (hopperCenterPose.isEmpty()) {
       return OptionalDouble.empty();
     }
 
-    Pose2d hopperCenterPose = hopperTagPose.get().toPose2d().transformBy(
-        new Transform2d(
-            VisionConstants.kHopperCenterOffsetForwardMeters,
-            VisionConstants.kHopperCenterOffsetLeftMeters,
-            Rotation2d.kZero));
-
     Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
-    return OptionalDouble.of(autoAlignReferenceField.getDistance(hopperCenterPose.getTranslation()));
+    return OptionalDouble.of(autoAlignReferenceField.getDistance(hopperCenterPose.get().getTranslation()));
   }
 
   private static Translation2d getAutoAlignReferenceField(Pose2d robotPose) {
@@ -595,6 +592,29 @@ public class VisionSubsystem extends SubsystemBase {
         VisionConstants.kAutoAlignCenterShiftLeftMeters);
     return robotPose.getTranslation().plus(
         autoAlignOffsetRobot.rotateBy(robotPose.getRotation()));
+  }
+
+  public static OptionalDouble getEstimatedHopperCenterDistanceMeters(Pose2d robotPose) {
+    Optional<Pose2d> hopperCenterPose = getHopperCenterPose();
+    if (hopperCenterPose.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+
+    Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
+    return OptionalDouble.of(autoAlignReferenceField.getDistance(hopperCenterPose.get().getTranslation()));
+  }
+
+  private static Optional<Pose2d> getHopperCenterPose() {
+    var hopperTagPose = kFieldLayout.getTagPose(VisionConstants.kHopperTagId);
+    if (hopperTagPose.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(hopperTagPose.get().toPose2d().transformBy(
+        new Transform2d(
+            VisionConstants.kHopperCenterOffsetForwardMeters,
+            VisionConstants.kHopperCenterOffsetLeftMeters,
+            Rotation2d.kZero)));
   }
 
   public Pose3d getEstimated3dPose() {

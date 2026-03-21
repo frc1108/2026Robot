@@ -57,7 +57,7 @@ public final class Constants {
     public static final int frontIntakecanid = 21;
     public static final int backIntakecanid = 22;
     public static final double intakeFrontVelocityRpm = 4000.0;
-    public static final double slowIntakeFrontVelocityRpm = 1000.0;
+    public static final double slowIntakeFrontVelocityRpm = 0;
     public static final double reverseIntakeFrontVelocityRpm = -4000.0;
     public static final double intakeBackVelocityRpm = -4000.0;
     public static final double slowIntakeBackVelocityRpm = -4000.0;
@@ -72,6 +72,7 @@ public final class Constants {
     public static final double frontTombSpeed = -0.95;
     public static final double feederTombSpeed = 0.95;
     public static final double feederTombVelocityRpm = -4000.0;
+    public static final double reverseFeederTombVelocityRpm = 4000.0;
     public static final double reverseFrontTombSpeed = 0.95;
     public static final double reverseBackTombSpeed = -0.95;
   }
@@ -227,7 +228,7 @@ public final class Constants {
     public static final double kFrontFuelCameraRotY = 0.0;
     public static final double kFrontFuelCameraRotZ = 0.0;
 
-    public static final double kMaxDistanceMeters = 10.0;
+    public static final double kMaxDistanceMeters = 5.5;
     public static final double kMaxAmbiguity = 0.35;
 
     public static final double kAimP = 0.03;
