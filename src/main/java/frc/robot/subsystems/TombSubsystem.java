@@ -100,10 +100,18 @@ public class TombSubsystem extends SubsystemBase {
     this.setFeederVelocityRpm(TombConstants.feederTombVelocityRpm);
   }
 
+  public void startFrontTombMotor() {
+    this.setFrontTombPower(TombConstants.frontTombSpeed);
+  }
+
   public void stopTombMotors() {
     this.setFrontTombPower(0.0);
     this.setBackTombPower(0.0);
     this.setFeederVelocityRpm(0.0);
+  }
+
+  public void stopFrontTombMotor() {
+    this.setFrontTombPower(0.0);
   }
 
   public Command tomb() {
@@ -115,6 +123,12 @@ public class TombSubsystem extends SubsystemBase {
         () -> {
           this.stopTombMotors();
         });
+  }
+
+  public Command frontTombCommand() {
+    return this.startEnd(
+        this::startFrontTombMotor,
+        this::stopFrontTombMotor);
   }
 
     public Command reverseTomb() {

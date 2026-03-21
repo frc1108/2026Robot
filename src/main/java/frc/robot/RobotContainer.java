@@ -194,7 +194,10 @@ public class RobotContainer {
           m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier));
     }
 
-    m_driverController.leftTrigger().whileTrue(m_intake.intake());
+    m_driverController.leftTrigger().whileTrue(
+        Commands.parallel(
+            m_intake.intake(),
+            m_tomb.frontTombCommand()));
     m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
     m_driverController.x().whileTrue(m_shooter.slowShootCommand());
     m_driverController.a().onTrue(Commands.runOnce(m_robotDrive::zeroHeading, m_robotDrive));
