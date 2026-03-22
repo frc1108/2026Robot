@@ -1,0 +1,86 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "MiddleShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Tomb"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 5.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shoot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Tomb"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopTomb"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

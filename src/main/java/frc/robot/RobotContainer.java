@@ -174,6 +174,22 @@ public class RobotContainer {
   private void configureButtonBindings() {
     boolean hasVision = m_vision != null;
     DoubleSupplier hopperDistanceSupplier = createHopperDistanceSupplier();
+    Command autoShootAlignCommand = hasVision
+        ? Commands.parallel(
+            new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController),
+            m_hood.autoHoodFromDistanceCommand(hopperDistanceSupplier),
+            m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier))
+        : Commands.parallel(
+            m_hood.autoHoodFromDistanceCommand(hopperDistanceSupplier),
+            m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier));
+    Command tombActionCommand = Commands.parallel(
+        m_tomb.tomb(),
+        m_intake.backIntakeCommand());
+    Command delayedBFireCommand = Commands.sequence(
+        Commands.waitSeconds(0.5),
+        Commands.parallel(
+            m_tomb.tomb(),
+            m_intake.jiggleIntakeCommand()));
 
     if (hasVision) {
       m_driverController.rightBumper().whileTrue(Commands.parallel(
@@ -206,8 +222,12 @@ public class RobotContainer {
     }
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
-    m_driverController.y().whileTrue(m_tomb.tomb());
-    m_driverController.b().whileTrue(m_tomb.reverseFeederCommand());
+    m_driverController.povRight().whileTrue(m_tomb.reverseFeederCommand());
+    m_driverController.y().whileTrue(tombActionCommand);
+    m_driverController.b().whileTrue(
+        Commands.parallel(
+            autoShootAlignCommand,
+            delayedBFireCommand));
 
     m_operatorController.rightBumper().whileTrue(m_hood.hoodUpCommand());
     m_operatorController.leftBumper().whileTrue(m_hood.hoodDownCommand());
@@ -272,7 +292,7 @@ public class RobotContainer {
 
   private void startAutoIntakeCommand() {
     stopAutoIntakeCommand();
-    m_activeAutoIntakeCommand = m_intake.intake();
+    m_activeAutoIntakeCommand = m_intake.autoIntakeCommand();
     CommandScheduler.getInstance().schedule(m_activeAutoIntakeCommand);
   }
 

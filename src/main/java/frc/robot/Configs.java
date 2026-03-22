@@ -1,6 +1,7 @@
 package frc.robot;
 
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -61,9 +62,11 @@ public final class Configs {
     }
     public static final class Intake {
                 public static final SparkMaxConfig intakeConfig = new SparkMaxConfig();
+                public static final SparkFlexConfig vortexIntakeConfig = new SparkFlexConfig();
 
         static{
         intakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(25).voltageCompensation(10);
+        vortexIntakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(35).voltageCompensation(10);
     }}
 
     public static final class Feeder {

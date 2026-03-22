@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -14,6 +15,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs;
 import frc.robot.Constants.IntakeConstants;
@@ -21,6 +23,7 @@ import frc.robot.Constants.IntakeConstants;
 public class IntakeSubsystem extends SubsystemBase {
   final SparkMax m_frontIntake = new SparkMax(IntakeConstants.frontIntakecanid, MotorType.kBrushless);
   final SparkMax m_backIntake = new SparkMax(IntakeConstants.backIntakecanid, MotorType.kBrushless);
+  final SparkFlex m_thirdIntake = new SparkFlex(IntakeConstants.thirdIntakeCanId, MotorType.kBrushless);
   private SparkClosedLoopController m_frontClosedLoopController;
   private SparkClosedLoopController m_backClosedLoopController;
   private RelativeEncoder m_frontEncoder;
@@ -34,6 +37,10 @@ public class IntakeSubsystem extends SubsystemBase {
       PersistMode.kPersistParameters);
       m_backIntake.configure(
         Configs.Intake.intakeConfig,
+        ResetMode.kResetSafeParameters,
+        PersistMode.kPersistParameters);
+      m_thirdIntake.configure(
+        Configs.Intake.vortexIntakeConfig,
         ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
       // Defensive: explicitly ensure IdleMode is Brake on each controller
@@ -88,6 +95,10 @@ public class IntakeSubsystem extends SubsystemBase {
     }
   }
 
+  private void setThirdIntakePercent(double percent) {
+    m_thirdIntake.set(Math.max(-1.0, Math.min(1.0, percent)));
+  }
+
   /** Enable/disable intake closed-loop velocity control at runtime. */
   public void enableIntakeClosedLoop(boolean enabled) {
     m_useIntakeClosedLoop = enabled;
@@ -97,10 +108,20 @@ public class IntakeSubsystem extends SubsystemBase {
     setIntakeVelocityRpm(
         IntakeConstants.intakeFrontVelocityRpm,
         IntakeConstants.intakeBackVelocityRpm);
+    setThirdIntakePercent(IntakeConstants.intakeThirdPercentOutput);
   }
 
   public void stopIntakeMotors() {
     setIntakeVelocityRpm(0, 0);
+    setThirdIntakePercent(0.0);
+  }
+
+  public void startBackIntakeMotor() {
+    setIntakeVelocityRpm(0.0, IntakeConstants.intakeBackVelocityRpm);
+  }
+
+  public void stopBackIntakeMotor() {
+    setIntakeVelocityRpm(0.0, 0.0);
   }
 
 public Command intake() {
@@ -118,9 +139,10 @@ public Command reverseIntake() {
     () -> {
     this.setIntakeVelocityRpm(IntakeConstants.reverseIntakeFrontVelocityRpm,
       IntakeConstants.reverseIntakeBackVelocityRpm);
+    setThirdIntakePercent(IntakeConstants.reverseIntakeThirdPercentOutput);
     },
     () -> {
-      this.setIntakeVelocityRpm(0, 0);
+      stopIntakeMotors();
     });
 }
 
@@ -128,17 +150,39 @@ public Command slowIntake() {
   return this.startEnd(
     () -> {
   this.setIntakeVelocityRpm(IntakeConstants.slowIntakeFrontVelocityRpm, IntakeConstants.slowIntakeBackVelocityRpm);
+  setThirdIntakePercent(IntakeConstants.slowIntakeThirdPercentOutput);
     },
     () -> {
-      this.setIntakeVelocityRpm(0, 0);
+      stopIntakeMotors();
     });
 }
 
   /** Command that runs both intake motors at the configured intakeVelocityRpm. */
   public Command intakeVelocityCommand() {
   return this.startEnd(
-    () -> this.setIntakeVelocityRpm(IntakeConstants.intakeFrontVelocityRpm, IntakeConstants.intakeBackVelocityRpm),
-    () -> this.setIntakeVelocityRpm(0, 0));
+    this::startIntakeMotors,
+    this::stopIntakeMotors);
+  }
+
+  public Command autoIntakeCommand() {
+    return this.startEnd(
+        this::startIntakeMotors,
+        this::stopIntakeMotors);
+  }
+
+  public Command backIntakeCommand() {
+    return this.startEnd(
+        this::startBackIntakeMotor,
+        this::stopBackIntakeMotor);
+  }
+
+  public Command jiggleIntakeCommand() {
+    return Commands.repeatingSequence(
+        this.runOnce(this::startIntakeMotors),
+        Commands.waitSeconds(0.5),
+        this.runOnce(this::stopIntakeMotors),
+        Commands.waitSeconds(0.5))
+        .finallyDo(this::stopIntakeMotors);
   }
 
 }

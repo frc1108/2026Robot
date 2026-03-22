@@ -56,12 +56,16 @@ public final class Constants {
   public static final class IntakeConstants {
     public static final int frontIntakecanid = 21;
     public static final int backIntakecanid = 22;
+    public static final int thirdIntakeCanId = 26;
     public static final double intakeFrontVelocityRpm = 4000.0;
-    public static final double slowIntakeFrontVelocityRpm = 0;
+    public static final double slowIntakeFrontVelocityRpm = 2000.0;
     public static final double reverseIntakeFrontVelocityRpm = -4000.0;
     public static final double intakeBackVelocityRpm = -4000.0;
-    public static final double slowIntakeBackVelocityRpm = -4000.0;
+    public static final double slowIntakeBackVelocityRpm = -2000.0;
     public static final double reverseIntakeBackVelocityRpm = 4000.0;
+    public static final double intakeThirdPercentOutput = -0.95;
+    public static final double slowIntakeThirdPercentOutput = -0.45;
+    public static final double reverseIntakeThirdPercentOutput = 0.95;
   }
 
   public static final class TombConstants {
@@ -71,8 +75,8 @@ public final class Constants {
     public static final double backTombSpeed = 0.95;
     public static final double frontTombSpeed = -0.95;
     public static final double feederTombSpeed = 0.95;
-    public static final double feederTombVelocityRpm = -4000.0;
-    public static final double reverseFeederTombVelocityRpm = 4000.0;
+    public static final double feederTombVelocityRpm = -5000.0;
+    public static final double reverseFeederTombVelocityRpm = 5000.0;
     public static final double reverseFrontTombSpeed = 0.95;
     public static final double reverseBackTombSpeed = -0.95;
   }
