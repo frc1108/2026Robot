@@ -57,6 +57,12 @@
                 }
               },
               {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              },
+              {
                 "type": "wait",
                 "data": {
                   "waitTime": 5.0
@@ -75,6 +81,12 @@
           "type": "named",
           "data": {
             "name": "StopTomb"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopIntake"
           }
         },
         {

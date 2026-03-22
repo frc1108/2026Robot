@@ -292,9 +292,5 @@ public final class Constants {
     public static final double kFuelMinEstimatedDistanceMeters = 0.3;
     public static final double kFuelMaxEstimatedDistanceMeters = 4.0;
 
-    // Camera startup re-init pulse:
-    // run once after boot to force PhotonVision to re-apply camera settings.
-    public static final boolean kRunCameraStartupReinitPulse = true;
-    public static final double kCameraStartupReinitDelaySeconds = 2.0;
   }
 }
