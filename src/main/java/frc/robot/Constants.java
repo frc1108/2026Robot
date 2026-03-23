@@ -58,13 +58,13 @@ public final class Constants {
     public static final int backIntakecanid = 22;
     public static final int thirdIntakeCanId = 26;
     public static final double intakeFrontVelocityRpm = 4000.0;
-    public static final double slowIntakeFrontVelocityRpm = 2000.0;
+    public static final double slowIntakeFrontVelocityRpm = 2500.0;
     public static final double reverseIntakeFrontVelocityRpm = -4000.0;
     public static final double intakeBackVelocityRpm = -4000.0;
-    public static final double slowIntakeBackVelocityRpm = -2000.0;
+    public static final double slowIntakeBackVelocityRpm = -2500.0;
     public static final double reverseIntakeBackVelocityRpm = 4000.0;
     public static final double intakeThirdPercentOutput = -0.95;
-    public static final double slowIntakeThirdPercentOutput = -0.45;
+    public static final double slowIntakeThirdPercentOutput = -0.60;
     public static final double reverseIntakeThirdPercentOutput = 0.95;
   }
 
@@ -140,6 +140,8 @@ public final class Constants {
     public static final double kShooterFullRpm = 4200.0;
     public static final double kShooterSlowRpm = 2800.0;
     public static final double kShooterMaxRpm = 6000.0;
+    public static final double[] kSideShotDistanceMeters = {2.0, 6.0, 10.0};
+    public static final double[] kSideShotDistanceRpm = {2400.0, 4000.0, 5000.0};
 
     // TalonFX velocity PID/FF gains for shooter wheels.
     public static final double kShooterVelocityP = 0.35;
@@ -185,6 +187,12 @@ public final class Constants {
     public static final int kHopperTagId = 26;
     public static final double kHopperCenterOffsetForwardMeters = Units.inchesToMeters(-24);
     public static final double kHopperCenterOffsetLeftMeters = 0;
+    public static final int kLeftSideShotReferenceTagId = 26;
+    public static final int kRightSideShotReferenceTagId = 26;
+    public static final double kSideShotOffsetForwardMeters = Units.inchesToMeters(100.0);
+    public static final double kLeftSideShotOffsetLeftMeters = Units.inchesToMeters(120.0);
+    public static final double kRightSideShotOffsetLeftMeters = Units.inchesToMeters(-120.0);
+    public static final double kSideShotHoodAngleDegrees = 20.0;
 
     // Auto-align uses a shifted effective robot center instead of the true robot center.
     // Negative X moves the effective shot origin toward the back of the robot.
@@ -245,7 +253,7 @@ public final class Constants {
     public static final double kAimRotationSign = 1.0;
 
     public static final double kBallExitSpeedMetersPerSecond = 9.0;
-    public static final double kShotLeadGain = 2.0;
+    public static final double kShotLeadGain = 5.0;
     public static final double kMaxShotLeadDegrees = 30.0;
 
     // Fuel-object follow tuning (PhotonVision object detection / YOLO).

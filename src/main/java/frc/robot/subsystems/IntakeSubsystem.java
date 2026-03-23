@@ -179,9 +179,9 @@ public Command slowIntake() {
   public Command jiggleIntakeCommand() {
     return Commands.repeatingSequence(
         this.runOnce(this::startIntakeMotors),
-        Commands.waitSeconds(0.5),
+        Commands.waitSeconds(0.25),
         this.runOnce(this::stopIntakeMotors),
-        Commands.waitSeconds(0.5))
+        Commands.waitSeconds(0.25))
         .finallyDo(this::stopIntakeMotors);
   }
 

@@ -144,14 +144,16 @@ public class ShooterSubsystem extends SubsystemBase {
     if (m_tablePairCount == 0) {
       return ShooterConstants.kShooterFullRpm;
     }
-    return interpolateShooterRpm(distanceMeters);
+    return interpolateShooterRpm(distanceMeters, ShooterConstants.kShooterDistanceMeters, ShooterConstants.kShooterDistanceRpm);
   }
 
-  private double interpolateShooterRpm(double distanceMeters) {
-    double[] distances = ShooterConstants.kShooterDistanceMeters;
-    double[] rpms = ShooterConstants.kShooterDistanceRpm;
-    int count = m_tablePairCount;
+  private double interpolateShooterRpm(double distanceMeters, double[] distances, double[] rpms) {
+    int count = Math.min(distances.length, rpms.length);
     final double epsilon = 1e-9;
+
+    if (count <= 0) {
+      return ShooterConstants.kShooterFullRpm;
+    }
 
     if (count == 1) {
       return rpms[0];
@@ -213,6 +215,16 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public Command autoShootFromDistanceCommand(DoubleSupplier distanceMetersSupplier) {
+    return autoShootFromDistanceCommand(
+        distanceMetersSupplier,
+        ShooterConstants.kShooterDistanceMeters,
+        ShooterConstants.kShooterDistanceRpm);
+  }
+
+  public Command autoShootFromDistanceCommand(
+      DoubleSupplier distanceMetersSupplier,
+      double[] distanceTableMeters,
+      double[] rpmTable) {
     return this.run(() -> {
       double nowSec = Timer.getFPGATimestamp();
       if (!Double.isNaN(m_lastAutoUpdateTimestampSec)
@@ -237,7 +249,7 @@ public class ShooterSubsystem extends SubsystemBase {
         }
       }
 
-      double desiredRpm = getAutoShooterRpmForDistance(rawDistance);
+      double desiredRpm = interpolateShooterRpm(rawDistance, distanceTableMeters, rpmTable);
       if (Double.isNaN(m_lastAutoCommandRpm)) {
         m_lastAutoCommandRpm = getAverageShooterRpm();
       }

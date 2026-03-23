@@ -518,24 +518,52 @@ public class VisionSubsystem extends SubsystemBase {
       return OptionalDouble.empty();
     }
 
+    OptionalDouble targetRobotHeadingDeg = getTargetHeadingDegrees(robotPose, hopperCenterPose.get());
+    if (targetRobotHeadingDeg.isEmpty()) {
+      return OptionalDouble.empty();
+    }
     Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
     autoAlignReferenceX = autoAlignReferenceField.getX();
     autoAlignReferenceY = autoAlignReferenceField.getY();
+    autoAlignTargetHeadingDeg = targetRobotHeadingDeg.getAsDouble();
+    return targetRobotHeadingDeg;
+  }
 
-    double lineToHopperDeg = Math.toDegrees(Math.atan2(
-        hopperCenterPose.get().getY() - autoAlignReferenceField.getY(),
-        hopperCenterPose.get().getX() - autoAlignReferenceField.getX()));
+  public static OptionalDouble getTargetHeadingDegrees(Pose2d robotPose, Pose2d targetPose) {
+    Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
+    double lineToTargetDeg = Math.toDegrees(Math.atan2(
+        targetPose.getY() - autoAlignReferenceField.getY(),
+        targetPose.getX() - autoAlignReferenceField.getX()));
 
     double shooterFacingDeg =
         robotPose.getRotation().getDegrees() + VisionConstants.getShooterAxisAngleDegrees();
-    // Compute heading error in shooter-axis space, then convert back to robot heading.
     double shooterAimErrorDeg =
-        MathUtil.inputModulus(lineToHopperDeg - shooterFacingDeg, -180.0, 180.0);
+        MathUtil.inputModulus(lineToTargetDeg - shooterFacingDeg, -180.0, 180.0);
 
     double targetRobotHeadingDeg = MathUtil.inputModulus(
         robotPose.getRotation().getDegrees() + shooterAimErrorDeg, -180.0, 180.0);
-    autoAlignTargetHeadingDeg = targetRobotHeadingDeg;
     return OptionalDouble.of(targetRobotHeadingDeg);
+  }
+
+  public static OptionalDouble getDistanceMetersToTarget(Pose2d robotPose, Pose2d targetPose) {
+    Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
+    return OptionalDouble.of(autoAlignReferenceField.getDistance(targetPose.getTranslation()));
+  }
+
+  public static Optional<Pose2d> getPoseFromTagOffset(
+      int tagId,
+      double forwardOffsetMeters,
+      double leftOffsetMeters) {
+    var tagPose = kFieldLayout.getTagPose(tagId);
+    if (tagPose.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(tagPose.get().toPose2d().transformBy(
+        new Transform2d(
+            forwardOffsetMeters,
+            leftOffsetMeters,
+            Rotation2d.kZero)));
   }
 
   public OptionalDouble getHopperCenterDistanceMeters(Pose2d robotPose) {
@@ -544,16 +572,7 @@ public class VisionSubsystem extends SubsystemBase {
       return OptionalDouble.empty();
     }
 
-    Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
-    return OptionalDouble.of(autoAlignReferenceField.getDistance(hopperCenterPose.get().getTranslation()));
-  }
-
-  private static Translation2d getAutoAlignReferenceField(Pose2d robotPose) {
-    Translation2d autoAlignOffsetRobot = new Translation2d(
-        VisionConstants.kAutoAlignCenterShiftForwardMeters,
-        VisionConstants.kAutoAlignCenterShiftLeftMeters);
-    return robotPose.getTranslation().plus(
-        autoAlignOffsetRobot.rotateBy(robotPose.getRotation()));
+    return getDistanceMetersToTarget(robotPose, hopperCenterPose.get());
   }
 
   public static OptionalDouble getEstimatedHopperCenterDistanceMeters(Pose2d robotPose) {
@@ -562,8 +581,39 @@ public class VisionSubsystem extends SubsystemBase {
       return OptionalDouble.empty();
     }
 
-    Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
-    return OptionalDouble.of(autoAlignReferenceField.getDistance(hopperCenterPose.get().getTranslation()));
+    return getDistanceMetersToTarget(robotPose, hopperCenterPose.get());
+  }
+
+  public static OptionalDouble getDistanceMetersToTagOffsetTarget(
+      Pose2d robotPose,
+      int tagId,
+      double forwardOffsetMeters,
+      double leftOffsetMeters) {
+    Optional<Pose2d> targetPose = getPoseFromTagOffset(tagId, forwardOffsetMeters, leftOffsetMeters);
+    if (targetPose.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+    return getDistanceMetersToTarget(robotPose, targetPose.get());
+  }
+
+  public static OptionalDouble getHeadingDegreesToTagOffsetTarget(
+      Pose2d robotPose,
+      int tagId,
+      double forwardOffsetMeters,
+      double leftOffsetMeters) {
+    Optional<Pose2d> targetPose = getPoseFromTagOffset(tagId, forwardOffsetMeters, leftOffsetMeters);
+    if (targetPose.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+    return getTargetHeadingDegrees(robotPose, targetPose.get());
+  }
+
+  private static Translation2d getAutoAlignReferenceField(Pose2d robotPose) {
+    Translation2d autoAlignOffsetRobot = new Translation2d(
+        VisionConstants.kAutoAlignCenterShiftForwardMeters,
+        VisionConstants.kAutoAlignCenterShiftLeftMeters);
+    return robotPose.getTranslation().plus(
+        autoAlignOffsetRobot.rotateBy(robotPose.getRotation()));
   }
 
   private static Optional<Pose2d> getHopperCenterPose() {

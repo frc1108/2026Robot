@@ -21,7 +21,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.VisionConstants;
+import frc.robot.commands.AimAtFieldPoseWhileDrivingCommand;
 import frc.robot.commands.AimWhileDrivingCommand;
 import frc.robot.commands.FollowFuelCommand;
 import frc.robot.subsystems.DriveSubsystem;
@@ -34,6 +36,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 @Logged
@@ -51,6 +54,7 @@ public class RobotContainer {
   private Command m_activeAutoShootCommand;
   private Command m_activeAutoIntakeCommand;
   private Command m_activeAutoTombCommand;
+  private Command m_activeHoodAutoZeroCommand;
   private final PIDController m_autoAimRotationPid =
       new PIDController(VisionConstants.kAimP, VisionConstants.kAimI, VisionConstants.kAimD);
   private SendableChooser<Command> m_autoChooser;
@@ -118,6 +122,9 @@ public class RobotContainer {
         "AimAtHopperOff",
         Commands.runOnce(this::disableAutoAimOverride));
     NamedCommands.registerCommand(
+        "AutoZeroHood",
+        Commands.runOnce(this::scheduleHoodAutoZero));
+    NamedCommands.registerCommand(
         "Shoot",
         Commands.runOnce(() -> startAutoShootCommand(hopperDistanceSupplier)));
     NamedCommands.registerCommand(
@@ -135,6 +142,8 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "StopTomb",
         Commands.runOnce(this::stopAutoTombCommand));
+
+    new EventTrigger("AutoZeroHood").onTrue(Commands.runOnce(this::scheduleHoodAutoZero));
   }
 
   private double getAutoAimRotationFeedbackRadPerSec() {
@@ -171,6 +180,14 @@ public class RobotContainer {
     stopAutoTombCommand();
   }
 
+  public void scheduleHoodAutoZero() {
+    if (m_activeHoodAutoZeroCommand != null && m_activeHoodAutoZeroCommand.isScheduled()) {
+      return;
+    }
+    m_activeHoodAutoZeroCommand = m_hood.autoZeroByCurrentCommand();
+    CommandScheduler.getInstance().schedule(m_activeHoodAutoZeroCommand);
+  }
+
   private void configureButtonBindings() {
     boolean hasVision = m_vision != null;
     DoubleSupplier hopperDistanceSupplier = createHopperDistanceSupplier();
@@ -190,6 +207,46 @@ public class RobotContainer {
         Commands.parallel(
             m_tomb.tomb(),
             m_intake.jiggleIntakeCommand()));
+    Optional<edu.wpi.first.math.geometry.Pose2d> leftSideShotPose = VisionSubsystem.getPoseFromTagOffset(
+        VisionConstants.kLeftSideShotReferenceTagId,
+        VisionConstants.kSideShotOffsetForwardMeters,
+        VisionConstants.kLeftSideShotOffsetLeftMeters);
+    Optional<edu.wpi.first.math.geometry.Pose2d> rightSideShotPose = VisionSubsystem.getPoseFromTagOffset(
+        VisionConstants.kRightSideShotReferenceTagId,
+        VisionConstants.kSideShotOffsetForwardMeters,
+        VisionConstants.kRightSideShotOffsetLeftMeters);
+    DoubleSupplier leftSideShotDistanceSupplier =
+        () -> leftSideShotPose.flatMap(
+            pose -> VisionSubsystem.getDistanceMetersToTarget(m_robotDrive.getPose(), pose).stream().boxed().findFirst())
+            .orElse(kDefaultHopperDistanceMeters);
+    DoubleSupplier rightSideShotDistanceSupplier =
+        () -> rightSideShotPose.flatMap(
+            pose -> VisionSubsystem.getDistanceMetersToTarget(m_robotDrive.getPose(), pose).stream().boxed().findFirst())
+            .orElse(kDefaultHopperDistanceMeters);
+    Command leftSideShotCommand = Commands.parallel(
+        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, () -> leftSideShotPose),
+        m_shooter.autoShootFromDistanceCommand(
+            leftSideShotDistanceSupplier,
+            ShooterConstants.kSideShotDistanceMeters,
+            ShooterConstants.kSideShotDistanceRpm),
+        m_hood.setHoodAngleCommand(VisionConstants.kSideShotHoodAngleDegrees),
+        Commands.sequence(
+            Commands.waitSeconds(0.5),
+            Commands.parallel(
+                m_tomb.tomb(),
+                m_intake.jiggleIntakeCommand())));
+    Command rightSideShotCommand = Commands.parallel(
+        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, () -> rightSideShotPose),
+        m_shooter.autoShootFromDistanceCommand(
+            rightSideShotDistanceSupplier,
+            ShooterConstants.kSideShotDistanceMeters,
+            ShooterConstants.kSideShotDistanceRpm),
+        m_hood.setHoodAngleCommand(VisionConstants.kSideShotHoodAngleDegrees),
+        Commands.sequence(
+            Commands.waitSeconds(0.5),
+            Commands.parallel(
+                m_tomb.tomb(),
+                m_intake.jiggleIntakeCommand())));
 
     if (hasVision) {
       m_driverController.rightBumper().whileTrue(Commands.parallel(
@@ -210,29 +267,28 @@ public class RobotContainer {
           m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier));
     }
 
-    m_driverController.leftTrigger().whileTrue(
-        Commands.parallel(
-            m_intake.intake(),
-            m_tomb.frontTombCommand()));
+    m_driverController.leftTrigger().whileTrue(m_intake.intake());
     m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
-    m_driverController.x().whileTrue(m_shooter.slowShootCommand());
+    m_driverController.x().whileTrue(m_tomb.reverseFeederCommand());
     m_driverController.a().onTrue(Commands.runOnce(m_robotDrive::zeroHeading, m_robotDrive));
     if (hasVision) {
       m_driverController.povUp().whileTrue(new FollowFuelCommand(m_vision, m_robotDrive));
     }
+    m_driverController.povLeft().whileTrue(leftSideShotCommand);
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
-    m_driverController.povRight().whileTrue(m_tomb.reverseFeederCommand());
+    m_driverController.povRight().whileTrue(rightSideShotCommand);
     m_driverController.y().whileTrue(tombActionCommand);
     m_driverController.b().whileTrue(
         Commands.parallel(
             autoShootAlignCommand,
             delayedBFireCommand));
+    m_driverController.start().onTrue(Commands.runOnce(this::scheduleHoodAutoZero));
 
     m_operatorController.rightBumper().whileTrue(m_hood.hoodUpCommand());
     m_operatorController.leftBumper().whileTrue(m_hood.hoodDownCommand());
     m_operatorController.a().whileTrue(m_tomb.reverseFeederCommand());
-    m_operatorController.start().onTrue(m_hood.autoZeroByCurrentCommand());
+    m_operatorController.start().onTrue(Commands.runOnce(this::scheduleHoodAutoZero));
 
     Shuffleboard.getTab("Hood")
         .addBoolean("Operator/ConnectedPort1",
@@ -318,5 +374,3 @@ public class RobotContainer {
     m_tomb.stopTombMotors();
   }
 }
-
-

@@ -5,6 +5,12 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "AutoZeroHood"
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "BRToBall"

@@ -70,6 +70,7 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_robotContainer.stopAutoNamedCommands();
+    m_robotContainer.scheduleHoodAutoZero();
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     /*
@@ -100,6 +101,7 @@ public class Robot extends TimedRobot {
     }
     m_robotContainer.clearAutoAimOverride();
     m_robotContainer.stopAutoNamedCommands();
+    m_robotContainer.scheduleHoodAutoZero();
   }
 
   /** This function is called periodically during operator control. */
@@ -111,6 +113,7 @@ public class Robot extends TimedRobot {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
     m_robotContainer.stopAutoNamedCommands();
+    m_robotContainer.scheduleHoodAutoZero();
   }
 
   /** This function is called periodically during test mode. */
