@@ -10,6 +10,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -207,46 +208,16 @@ public class RobotContainer {
         Commands.parallel(
             m_tomb.tomb(),
             m_intake.jiggleIntakeCommand()));
-    Optional<edu.wpi.first.math.geometry.Pose2d> leftSideShotPose = VisionSubsystem.getPoseFromTagOffset(
+    Optional<Pose2d> leftSideShotPose = VisionSubsystem.getPoseFromTagOffset(
         VisionConstants.kLeftSideShotReferenceTagId,
         VisionConstants.kSideShotOffsetForwardMeters,
         VisionConstants.kLeftSideShotOffsetLeftMeters);
-    Optional<edu.wpi.first.math.geometry.Pose2d> rightSideShotPose = VisionSubsystem.getPoseFromTagOffset(
+    Optional<Pose2d> rightSideShotPose = VisionSubsystem.getPoseFromTagOffset(
         VisionConstants.kRightSideShotReferenceTagId,
         VisionConstants.kSideShotOffsetForwardMeters,
         VisionConstants.kRightSideShotOffsetLeftMeters);
-    DoubleSupplier leftSideShotDistanceSupplier =
-        () -> leftSideShotPose.flatMap(
-            pose -> VisionSubsystem.getDistanceMetersToTarget(m_robotDrive.getPose(), pose).stream().boxed().findFirst())
-            .orElse(kDefaultHopperDistanceMeters);
-    DoubleSupplier rightSideShotDistanceSupplier =
-        () -> rightSideShotPose.flatMap(
-            pose -> VisionSubsystem.getDistanceMetersToTarget(m_robotDrive.getPose(), pose).stream().boxed().findFirst())
-            .orElse(kDefaultHopperDistanceMeters);
-    Command leftSideShotCommand = Commands.parallel(
-        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, () -> leftSideShotPose),
-        m_shooter.autoShootFromDistanceCommand(
-            leftSideShotDistanceSupplier,
-            ShooterConstants.kSideShotDistanceMeters,
-            ShooterConstants.kSideShotDistanceRpm),
-        m_hood.setHoodAngleCommand(VisionConstants.kSideShotHoodAngleDegrees),
-        Commands.sequence(
-            Commands.waitSeconds(0.5),
-            Commands.parallel(
-                m_tomb.tomb(),
-                m_intake.jiggleIntakeCommand())));
-    Command rightSideShotCommand = Commands.parallel(
-        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, () -> rightSideShotPose),
-        m_shooter.autoShootFromDistanceCommand(
-            rightSideShotDistanceSupplier,
-            ShooterConstants.kSideShotDistanceMeters,
-            ShooterConstants.kSideShotDistanceRpm),
-        m_hood.setHoodAngleCommand(VisionConstants.kSideShotHoodAngleDegrees),
-        Commands.sequence(
-            Commands.waitSeconds(0.5),
-            Commands.parallel(
-                m_tomb.tomb(),
-                m_intake.jiggleIntakeCommand())));
+    Command leftSideShotCommand = buildSideShotCommand(leftSideShotPose);
+    Command rightSideShotCommand = buildSideShotCommand(rightSideShotPose);
 
     if (hasVision) {
       m_driverController.rightBumper().whileTrue(Commands.parallel(
@@ -330,6 +301,32 @@ public class RobotContainer {
   private DoubleSupplier createHopperDistanceSupplier() {
     return () -> VisionSubsystem.getEstimatedHopperCenterDistanceMeters(m_robotDrive.getPose())
         .orElse(kDefaultHopperDistanceMeters);
+  }
+
+  private DoubleSupplier createTargetDistanceSupplier(Optional<Pose2d> targetPose) {
+    return () -> targetPose
+        .flatMap(
+            pose -> VisionSubsystem.getDistanceMetersToTarget(m_robotDrive.getPose(), pose)
+                .stream()
+                .boxed()
+                .findFirst())
+        .orElse(kDefaultHopperDistanceMeters);
+  }
+
+  private Command buildSideShotCommand(Optional<Pose2d> targetPose) {
+    DoubleSupplier targetDistanceSupplier = createTargetDistanceSupplier(targetPose);
+    return Commands.parallel(
+        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, () -> targetPose),
+        m_shooter.autoShootFromDistanceCommand(
+            targetDistanceSupplier,
+            ShooterConstants.kSideShotDistanceMeters,
+            ShooterConstants.kSideShotDistanceRpm),
+        m_hood.setHoodAngleCommand(VisionConstants.kSideShotHoodAngleDegrees),
+        Commands.sequence(
+            Commands.waitSeconds(0.5),
+            Commands.parallel(
+                m_tomb.tomb(),
+                m_intake.jiggleIntakeCommand())));
   }
 
   private void startAutoShootCommand(DoubleSupplier hopperDistanceSupplier) {
