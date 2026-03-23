@@ -104,6 +104,12 @@ public class DriveSubsystem extends SubsystemBase {
     double ySpeedDelivered = ySpeed * DriveConstants.kMaxSpeedMetersPerSecond;
     double rotDelivered = rot * DriveConstants.kMaxAngularSpeed;
 
+    if (fieldRelative
+        && DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red) {
+      xSpeedDelivered = -xSpeedDelivered;
+      ySpeedDelivered = -ySpeedDelivered;
+    }
+
     var swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(
         fieldRelative
             ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeedDelivered, ySpeedDelivered, rotDelivered,
@@ -154,7 +160,11 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void zeroHeading() {
-    m_gyro.setYaw(0);
+    if (DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red) {
+      m_gyro.setYaw(180.0);
+    } else {
+      m_gyro.setYaw(0.0);
+    }
   }
 
   public double getHeading() {

@@ -272,13 +272,16 @@ public final class Constants {
     public static final double kMaxAmbiguity = 0.35;
 
     // Main hopper / hub target definition
-    public static final int kHopperTagId = 26;
+    public static final int kBlueHopperTagId = 26;
+    public static final int kRedHopperTagId = 10;
     public static final double kHopperCenterOffsetForwardMeters = Units.inchesToMeters(-24.0);
     public static final double kHopperCenterOffsetLeftMeters = 0.0;
 
     // Driver POV left / right alternate shot targets
-    public static final int kLeftSideShotReferenceTagId = 26;
-    public static final int kRightSideShotReferenceTagId = 26;
+    public static final int kBlueLeftSideShotReferenceTagId = 26;
+    public static final int kRedLeftSideShotReferenceTagId = 10;
+    public static final int kBlueRightSideShotReferenceTagId = 26;
+    public static final int kRedRightSideShotReferenceTagId = 10;
     public static final double kSideShotOffsetForwardMeters = Units.inchesToMeters(100.0);
     public static final double kLeftSideShotOffsetLeftMeters = Units.inchesToMeters(120.0);
     public static final double kRightSideShotOffsetLeftMeters = Units.inchesToMeters(-120.0);

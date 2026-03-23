@@ -31,6 +31,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -78,6 +79,12 @@ public class VisionSubsystem extends SubsystemBase {
     } catch (IOException e) {
       throw new RuntimeException("Failed to load 2026 field layout", e);
     }
+  }
+
+  private static int getAllianceHopperTagId() {
+    return DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red
+        ? VisionConstants.kRedHopperTagId
+        : VisionConstants.kBlueHopperTagId;
   }
 
   public VisionSubsystem(
@@ -216,7 +223,7 @@ public class VisionSubsystem extends SubsystemBase {
       }
 
       for (PhotonTrackedTarget target : result.targets) {
-        if (target.getFiducialId() == VisionConstants.kHopperTagId) {
+        if (target.getFiducialId() == getAllianceHopperTagId()) {
           if (target.getPoseAmbiguity() < bestHopperAmbiguity) {
             bestHopperAmbiguity = target.getPoseAmbiguity();
             bestHopperTarget = target;
@@ -566,6 +573,18 @@ public class VisionSubsystem extends SubsystemBase {
             Rotation2d.kZero)));
   }
 
+  public static Optional<Pose2d> getAlliancePoseFromTagOffset(
+      int blueTagId,
+      int redTagId,
+      double forwardOffsetMeters,
+      double leftOffsetMeters) {
+    int selectedTagId = DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue)
+        == DriverStation.Alliance.Red
+            ? redTagId
+            : blueTagId;
+    return getPoseFromTagOffset(selectedTagId, forwardOffsetMeters, leftOffsetMeters);
+  }
+
   public OptionalDouble getHopperCenterDistanceMeters(Pose2d robotPose) {
     Optional<Pose2d> hopperCenterPose = getHopperCenterPose();
     if (hopperCenterPose.isEmpty()) {
@@ -617,16 +636,11 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private static Optional<Pose2d> getHopperCenterPose() {
-    var hopperTagPose = kFieldLayout.getTagPose(VisionConstants.kHopperTagId);
-    if (hopperTagPose.isEmpty()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(hopperTagPose.get().toPose2d().transformBy(
-        new Transform2d(
-            VisionConstants.kHopperCenterOffsetForwardMeters,
-            VisionConstants.kHopperCenterOffsetLeftMeters,
-            Rotation2d.kZero)));
+    return getAlliancePoseFromTagOffset(
+        VisionConstants.kBlueHopperTagId,
+        VisionConstants.kRedHopperTagId,
+        VisionConstants.kHopperCenterOffsetForwardMeters,
+        VisionConstants.kHopperCenterOffsetLeftMeters);
   }
 
   public Pose3d getEstimated3dPose() {

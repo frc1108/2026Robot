@@ -210,16 +210,18 @@ public class RobotContainer {
         Commands.parallel(
             m_tomb.tomb(),
             m_intake.jiggleIntakeCommand()));
-    Optional<Pose2d> leftSideShotPose = VisionSubsystem.getPoseFromTagOffset(
-        VisionConstants.kLeftSideShotReferenceTagId,
-        VisionConstants.kSideShotOffsetForwardMeters,
-        VisionConstants.kLeftSideShotOffsetLeftMeters);
-    Optional<Pose2d> rightSideShotPose = VisionSubsystem.getPoseFromTagOffset(
-        VisionConstants.kRightSideShotReferenceTagId,
-        VisionConstants.kSideShotOffsetForwardMeters,
-        VisionConstants.kRightSideShotOffsetLeftMeters);
-    Command leftSideShotCommand = buildSideShotCommand(leftSideShotPose);
-    Command rightSideShotCommand = buildSideShotCommand(rightSideShotPose);
+    Command leftSideShotCommand = buildSideShotCommand(
+        () -> VisionSubsystem.getAlliancePoseFromTagOffset(
+            VisionConstants.kBlueLeftSideShotReferenceTagId,
+            VisionConstants.kRedLeftSideShotReferenceTagId,
+            VisionConstants.kSideShotOffsetForwardMeters,
+            VisionConstants.kLeftSideShotOffsetLeftMeters));
+    Command rightSideShotCommand = buildSideShotCommand(
+        () -> VisionSubsystem.getAlliancePoseFromTagOffset(
+            VisionConstants.kBlueRightSideShotReferenceTagId,
+            VisionConstants.kRedRightSideShotReferenceTagId,
+            VisionConstants.kSideShotOffsetForwardMeters,
+            VisionConstants.kRightSideShotOffsetLeftMeters));
 
     if (hasVision) {
       m_driverController.rightBumper().whileTrue(Commands.parallel(
@@ -306,8 +308,8 @@ public class RobotContainer {
         .orElse(kDefaultHopperDistanceMeters);
   }
 
-  private DoubleSupplier createTargetDistanceSupplier(Optional<Pose2d> targetPose) {
-    return () -> targetPose
+  private DoubleSupplier createTargetDistanceSupplier(java.util.function.Supplier<Optional<Pose2d>> targetPoseSupplier) {
+    return () -> targetPoseSupplier.get()
         .flatMap(
             pose -> VisionSubsystem.getDistanceMetersToTarget(m_robotDrive.getPose(), pose)
                 .stream()
@@ -316,10 +318,10 @@ public class RobotContainer {
         .orElse(kDefaultHopperDistanceMeters);
   }
 
-  private Command buildSideShotCommand(Optional<Pose2d> targetPose) {
-    DoubleSupplier targetDistanceSupplier = createTargetDistanceSupplier(targetPose);
+  private Command buildSideShotCommand(java.util.function.Supplier<Optional<Pose2d>> targetPoseSupplier) {
+    DoubleSupplier targetDistanceSupplier = createTargetDistanceSupplier(targetPoseSupplier);
     return Commands.parallel(
-        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, () -> targetPose),
+        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, targetPoseSupplier),
         m_shooter.autoShootFromDistanceCommand(
             targetDistanceSupplier,
             ShooterConstants.kSideShotDistanceMeters,
