@@ -245,8 +245,8 @@ public final class Constants {
     public static final double kAimRotationSign = 1.0;
 
     public static final double kBallExitSpeedMetersPerSecond = 9.0;
-    public static final double kShotLeadGain = 1.35;
-    public static final double kMaxShotLeadDegrees = 18.0;
+    public static final double kShotLeadGain = 2.0;
+    public static final double kMaxShotLeadDegrees = 30.0;
 
     // Fuel-object follow tuning (PhotonVision object detection / YOLO).
     public static final double kFuelAimP = 0.03;
