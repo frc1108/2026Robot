@@ -63,6 +63,19 @@ public final class Constants {
     public static final double kDriveDeadband = 0.05;
   }
 
+  public static final class LightsConstants {
+    private LightsConstants() {}
+
+    public static final int kBlinkinPwmPort = 0;
+
+    // REV Blinkin PWM values. Change this list to the patterns you want to cycle through.
+    public static final double[] kBlinkinModeValues = {
+        -0.99, // rainbow, rainbow palette
+        -0.31, // solid red
+        0.87   // solid blue
+    };
+  }
+
   public static final class IntakeConstants {
     private IntakeConstants() {}
 

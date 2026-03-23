@@ -30,6 +30,7 @@ import frc.robot.commands.FollowFuelCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.TombSubsystem;
 import frc.robot.subsystems.VisionSubsystem;
@@ -49,6 +50,7 @@ public class RobotContainer {
   private final ShooterSubsystem m_shooter = new ShooterSubsystem();
   private final HoodSubsystem m_hood = new HoodSubsystem();
   private final IntakeSubsystem m_intake = new IntakeSubsystem();
+  private final LightsSubsystem m_lights = new LightsSubsystem();
   private final TombSubsystem m_tomb = new TombSubsystem();
   private VisionSubsystem m_vision;
   private boolean m_autoAimAtHopperEnabled = false;
@@ -255,6 +257,7 @@ public class RobotContainer {
             autoShootAlignCommand,
             delayedBFireCommand));
     m_driverController.start().onTrue(Commands.runOnce(this::scheduleHoodAutoZero));
+    m_driverController.back().onTrue(Commands.runOnce(m_lights::cycleMode, m_lights));
 
     m_operatorController.rightBumper().whileTrue(m_hood.hoodUpCommand());
     m_operatorController.leftBumper().whileTrue(m_hood.hoodDownCommand());
