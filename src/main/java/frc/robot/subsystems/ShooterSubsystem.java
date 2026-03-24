@@ -287,7 +287,7 @@ public class ShooterSubsystem extends SubsystemBase {
         ShooterConstants.kShooterVoltageCompMinVoltage,
         RobotController.getBatteryVoltage());
     double voltageScale = ShooterConstants.kShooterNominalVoltage / batteryVoltage;
-    double compensatedRpm = rpm * (1.0 + 0.25 * (voltageScale - 1.0));
+    double compensatedRpm = rpm * (1.0 + 0.175 * (voltageScale - 1.0));
     return MathUtil.clamp(compensatedRpm, -ShooterConstants.kShooterMaxRpm, ShooterConstants.kShooterMaxRpm);
   }
 }
