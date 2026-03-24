@@ -67,12 +67,14 @@ public final class Constants {
     private LightsConstants() {}
 
     public static final int kBlinkinPwmPort = 0;
+    public static final double kSolidRed = 0.61;
+    public static final double kSolidBlue = 0.87;
 
-    // REV Blinkin PWM values. Change this list to the patterns you want to cycle through.
+    // Mode 0 is alliance color. The rest are manual cycle options.
     public static final double[] kBlinkinModeValues = {
-        -0.99, // rainbow, rainbow palette
-        -0.31, // solid red
-        0.87   // solid blue
+        0.0,
+        kSolidRed,
+        kSolidBlue
     };
   }
 
@@ -183,6 +185,10 @@ public final class Constants {
     public static final double kAutoShooterMinCommandStepRpm = 1.0;
     public static final double kAutoShooterUpdatePeriodSeconds = 0.02;
 
+    // Main hopper shot voltage compensation. This scales RPM by 12V / battery voltage.
+    public static final double kShooterNominalVoltage = 12.0;
+    public static final double kShooterVoltageCompMinVoltage = 8.0;
+
     // Hood mechanical limits
     public static final double kMinHoodAngleDegrees = 0.0;
     public static final double kMaxHoodAngleDegrees = 45.0;
@@ -195,8 +201,8 @@ public final class Constants {
     public static final double kHoodMaxClosedLoopOutput = 0.55;
 
     // Hood current limits
-    public static final double kHoodRunSupplyCurrentLimitAmps = 4.0;
-    public static final double kHoodRunStatorCurrentLimitAmps = 5.0;
+    public static final double kHoodRunSupplyCurrentLimitAmps = 5.0;
+    public static final double kHoodRunStatorCurrentLimitAmps = 6.0;
     public static final double kHoodHomingSupplyCurrentLimitAmps = 1.25;
     public static final double kHoodHomingStatorCurrentLimitAmps = 3.0;
 
@@ -282,10 +288,10 @@ public final class Constants {
     public static final int kRedLeftSideShotReferenceTagId = 10;
     public static final int kBlueRightSideShotReferenceTagId = 26;
     public static final int kRedRightSideShotReferenceTagId = 10;
-    public static final double kSideShotOffsetForwardMeters = Units.inchesToMeters(100.0);
-    public static final double kLeftSideShotOffsetLeftMeters = Units.inchesToMeters(120.0);
-    public static final double kRightSideShotOffsetLeftMeters = Units.inchesToMeters(-120.0);
-    public static final double kSideShotHoodAngleDegrees = 20.0;
+    public static final double kSideShotOffsetForwardMeters = Units.inchesToMeters(120.0);
+    public static final double kLeftSideShotOffsetLeftMeters = Units.inchesToMeters(-100.0);
+    public static final double kRightSideShotOffsetLeftMeters = Units.inchesToMeters(100.0);
+    public static final double kSideShotHoodAngleDegrees = 40.0;
 
     // Auto-align reference point and shooter axis
     public static final double kAutoAlignCenterShiftForwardMeters = Units.inchesToMeters(-7.0);
@@ -307,7 +313,7 @@ public final class Constants {
 
     // Moving-shot lead compensation
     public static final double kBallExitSpeedMetersPerSecond = 9.0;
-    public static final double kShotLeadGain = 5.0;
+    public static final double kShotLeadGain = 3.0;
     public static final double kMaxShotLeadDegrees = 30.0;
 
     // Fuel object follow

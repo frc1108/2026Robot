@@ -11,6 +11,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.Timer;
@@ -218,13 +219,22 @@ public class ShooterSubsystem extends SubsystemBase {
     return autoShootFromDistanceCommand(
         distanceMetersSupplier,
         ShooterConstants.kShooterDistanceMeters,
-        ShooterConstants.kShooterDistanceRpm);
+        ShooterConstants.kShooterDistanceRpm,
+        true);
   }
 
   public Command autoShootFromDistanceCommand(
       DoubleSupplier distanceMetersSupplier,
       double[] distanceTableMeters,
       double[] rpmTable) {
+    return autoShootFromDistanceCommand(distanceMetersSupplier, distanceTableMeters, rpmTable, false);
+  }
+
+  private Command autoShootFromDistanceCommand(
+      DoubleSupplier distanceMetersSupplier,
+      double[] distanceTableMeters,
+      double[] rpmTable,
+      boolean applyVoltageCompensation) {
     return this.run(() -> {
       double nowSec = Timer.getFPGATimestamp();
       if (!Double.isNaN(m_lastAutoUpdateTimestampSec)
@@ -250,6 +260,9 @@ public class ShooterSubsystem extends SubsystemBase {
       }
 
       double desiredRpm = interpolateShooterRpm(rawDistance, distanceTableMeters, rpmTable);
+      if (applyVoltageCompensation) {
+        desiredRpm = applyBatteryVoltageCompensation(desiredRpm);
+      }
       if (Double.isNaN(m_lastAutoCommandRpm)) {
         m_lastAutoCommandRpm = getAverageShooterRpm();
       }
@@ -267,5 +280,14 @@ public class ShooterSubsystem extends SubsystemBase {
       m_lastAutoCommandRpm = Double.NaN;
       m_lastAutoUpdateTimestampSec = Double.NaN;
     }).finallyDo(() -> stopShooter());
+  }
+
+  private double applyBatteryVoltageCompensation(double rpm) {
+    double batteryVoltage = Math.max(
+        ShooterConstants.kShooterVoltageCompMinVoltage,
+        RobotController.getBatteryVoltage());
+    double voltageScale = ShooterConstants.kShooterNominalVoltage / batteryVoltage;
+    double compensatedRpm = rpm * (1.0 + 0.25 * (voltageScale - 1.0));
+    return MathUtil.clamp(compensatedRpm, -ShooterConstants.kShooterMaxRpm, ShooterConstants.kShooterMaxRpm);
   }
 }

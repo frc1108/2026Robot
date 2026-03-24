@@ -4,12 +4,12 @@
     {
       "anchor": {
         "x": 7.75,
-        "y": 6.85
+        "y": 7.0
       },
       "prevControl": null,
       "nextControl": {
         "x": 7.75175170840237,
-        "y": 5.801685355325132
+        "y": 5.951685355325132
       },
       "isLocked": false,
       "linkedName": null
@@ -33,14 +33,20 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
+      "name": "SlowIntake",
+      "waypointRelativePos": 0.05,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
       "name": "Intake",
-      "waypointRelativePos": 0,
+      "waypointRelativePos": 0.5,
       "endWaypointRelativePos": null,
       "command": null
     },
     {
       "name": "StopIntake",
-      "waypointRelativePos": 1.0,
+      "waypointRelativePos": 0.95,
       "endWaypointRelativePos": null,
       "command": null
     }

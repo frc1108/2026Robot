@@ -56,6 +56,7 @@ public class RobotContainer {
   private boolean m_autoAimAtHopperEnabled = false;
   private Command m_activeAutoShootCommand;
   private Command m_activeAutoIntakeCommand;
+  private Command m_activeAutoSlowIntakeCommand;
   private Command m_activeAutoTombCommand;
   private Command m_activeHoodAutoZeroCommand;
   private final PIDController m_autoAimRotationPid =
@@ -105,6 +106,8 @@ public class RobotContainer {
     new EventTrigger("StopShoot").onTrue(Commands.runOnce(this::stopAutoShootCommand));
     new EventTrigger("Intake").onTrue(Commands.runOnce(this::startAutoIntakeCommand));
     new EventTrigger("StopIntake").onTrue(Commands.runOnce(this::stopAutoIntakeCommand));
+    new EventTrigger("SlowIntake").onTrue(Commands.runOnce(this::startAutoSlowIntakeCommand));
+    new EventTrigger("StopSlowIntake").onTrue(Commands.runOnce(this::stopAutoSlowIntakeCommand));
     new EventTrigger("Tomb").onTrue(Commands.runOnce(this::startAutoTombCommand));
     new EventTrigger("StopTomb").onTrue(Commands.runOnce(this::stopAutoTombCommand));
     new EventTrigger("AimAtHopperOn").onTrue(Commands.runOnce(() -> {
@@ -139,6 +142,12 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "StopIntake",
         Commands.runOnce(this::stopAutoIntakeCommand));
+    NamedCommands.registerCommand(
+        "SlowIntake",
+        Commands.runOnce(this::startAutoSlowIntakeCommand));
+    NamedCommands.registerCommand(
+        "StopSlowIntake",
+        Commands.runOnce(this::stopAutoSlowIntakeCommand));
     NamedCommands.registerCommand(
         "Tomb",
         Commands.runOnce(this::startAutoTombCommand));
@@ -180,6 +189,7 @@ public class RobotContainer {
   public void stopAutoNamedCommands() {
     stopAutoShootCommand();
     stopAutoIntakeCommand();
+    stopAutoSlowIntakeCommand();
     stopAutoTombCommand();
   }
 
@@ -202,9 +212,7 @@ public class RobotContainer {
         : Commands.parallel(
             m_hood.autoHoodFromDistanceCommand(hopperDistanceSupplier),
             m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier));
-    Command tombActionCommand = Commands.parallel(
-        m_tomb.tomb(),
-        m_intake.backIntakeCommand());
+    Command tombActionCommand = m_tomb.tomb();
     Command delayedBFireCommand = Commands.sequence(
         Commands.waitSeconds(0.5),
         Commands.parallel(
@@ -321,17 +329,18 @@ public class RobotContainer {
   private Command buildSideShotCommand(java.util.function.Supplier<Optional<Pose2d>> targetPoseSupplier) {
     DoubleSupplier targetDistanceSupplier = createTargetDistanceSupplier(targetPoseSupplier);
     return Commands.parallel(
-        new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, targetPoseSupplier),
-        m_shooter.autoShootFromDistanceCommand(
-            targetDistanceSupplier,
-            ShooterConstants.kSideShotDistanceMeters,
-            ShooterConstants.kSideShotDistanceRpm),
-        m_hood.setHoodAngleCommand(VisionConstants.kSideShotHoodAngleDegrees),
-        Commands.sequence(
-            Commands.waitSeconds(0.5),
-            Commands.parallel(
-                m_tomb.tomb(),
-                m_intake.jiggleIntakeCommand())));
+            new AimAtFieldPoseWhileDrivingCommand(m_robotDrive, m_driverController, targetPoseSupplier),
+            m_shooter.autoShootFromDistanceCommand(
+                targetDistanceSupplier,
+                ShooterConstants.kSideShotDistanceMeters,
+                ShooterConstants.kSideShotDistanceRpm),
+            m_hood.setHoodAngleCommand(VisionConstants.kSideShotHoodAngleDegrees),
+            Commands.sequence(
+                Commands.waitSeconds(0.5),
+                Commands.parallel(
+                    m_tomb.tomb(),
+                    m_intake.jiggleIntakeCommand())))
+        .finallyDo(() -> m_hood.setHoodAngle(ShooterConstants.kMinHoodAngleDegrees));
   }
 
   private void startAutoShootCommand(DoubleSupplier hopperDistanceSupplier) {
@@ -349,6 +358,7 @@ public class RobotContainer {
   }
 
   private void startAutoIntakeCommand() {
+    stopAutoSlowIntakeCommand();
     stopAutoIntakeCommand();
     m_activeAutoIntakeCommand = m_intake.autoIntakeCommand();
     CommandScheduler.getInstance().schedule(m_activeAutoIntakeCommand);
@@ -358,6 +368,21 @@ public class RobotContainer {
     if (m_activeAutoIntakeCommand != null) {
       m_activeAutoIntakeCommand.cancel();
       m_activeAutoIntakeCommand = null;
+    }
+    m_intake.stopIntakeMotors();
+  }
+
+  private void startAutoSlowIntakeCommand() {
+    stopAutoIntakeCommand();
+    stopAutoSlowIntakeCommand();
+    m_activeAutoSlowIntakeCommand = m_intake.slowIntake();
+    CommandScheduler.getInstance().schedule(m_activeAutoSlowIntakeCommand);
+  }
+
+  private void stopAutoSlowIntakeCommand() {
+    if (m_activeAutoSlowIntakeCommand != null) {
+      m_activeAutoSlowIntakeCommand.cancel();
+      m_activeAutoSlowIntakeCommand = null;
     }
     m_intake.stopIntakeMotors();
   }
