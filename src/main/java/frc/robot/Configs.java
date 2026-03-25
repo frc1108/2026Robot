@@ -73,7 +73,7 @@ public final class Configs {
                 public static final SparkMaxConfig feederConfig = new SparkMaxConfig();
 
         static{
-        feederConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(35).voltageCompensation(10);
+        feederConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(40).voltageCompensation(10);
     }}
 
         public static final class Shooter {

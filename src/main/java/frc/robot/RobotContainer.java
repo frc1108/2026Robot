@@ -39,11 +39,12 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
 
 @Logged
 public class RobotContainer {
-  private static final String kDefaultAutoName = "BR";
+  private static final String kDefaultAutoName = "BumpR";
   private static final double kDefaultHopperDistanceMeters = 2.5;
 
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
@@ -55,6 +56,7 @@ public class RobotContainer {
   private VisionSubsystem m_vision;
   private boolean m_autoAimAtHopperEnabled = false;
   private Command m_activeAutoShootCommand;
+  private Command m_activeAutoShootJiggleCommand;
   private Command m_activeAutoIntakeCommand;
   private Command m_activeAutoSlowIntakeCommand;
   private Command m_activeAutoTombCommand;
@@ -97,13 +99,19 @@ public class RobotContainer {
         .withPosition(0, 0)
         .withSize(5, 2);
     SmartDashboard.putData("Auto Chooser", m_autoChooser);
+    Shuffleboard.getTab("Autonomous")
+        .addBoolean("ShootJiggleActive", this::isAutoShootJiggleActive)
+        .withPosition(5, 0)
+        .withSize(2, 1);
   }
 
   private void configurePathPlannerNamedCommands() {
     DoubleSupplier hopperDistanceSupplier = createHopperDistanceSupplier();
 
     new EventTrigger("Shoot").onTrue(Commands.runOnce(() -> startAutoShootCommand(hopperDistanceSupplier)));
-    new EventTrigger("StopShoot").onTrue(Commands.runOnce(this::stopAutoShootCommand));
+    new EventTrigger("StopShoot").onTrue(Commands.runOnce(this::stopAllAutoShootCommands));
+    new EventTrigger("ShootJiggle").onTrue(Commands.runOnce(() -> startAutoShootJiggleCommand(hopperDistanceSupplier)));
+    new EventTrigger("StopShootJiggle").onTrue(Commands.runOnce(this::stopAllAutoShootCommands));
     new EventTrigger("Intake").onTrue(Commands.runOnce(this::startAutoIntakeCommand));
     new EventTrigger("StopIntake").onTrue(Commands.runOnce(this::stopAutoIntakeCommand));
     new EventTrigger("SlowIntake").onTrue(Commands.runOnce(this::startAutoSlowIntakeCommand));
@@ -135,7 +143,29 @@ public class RobotContainer {
         Commands.runOnce(() -> startAutoShootCommand(hopperDistanceSupplier)));
     NamedCommands.registerCommand(
         "StopShoot",
-        Commands.runOnce(this::stopAutoShootCommand));
+        Commands.runOnce(this::stopAllAutoShootCommands));
+    NamedCommands.registerCommand(
+        "ShootJiggle",
+        Commands.runOnce(() -> startAutoShootJiggleCommand(hopperDistanceSupplier)));
+    NamedCommands.registerCommand(
+        "StopShootJiggle",
+        Commands.runOnce(this::stopAllAutoShootCommands));
+    NamedCommands.registerCommand(
+        "ShootJiggle5Sec",
+        Commands.defer(
+            () -> buildShootJiggleCommand(hopperDistanceSupplier).withTimeout(5.0),
+            Set.of(m_robotDrive, m_hood, m_shooter, m_tomb, m_intake)));
+    NamedCommands.registerCommand(
+        "ShootJiggle6Sec",
+        Commands.defer(
+            () -> buildShootJiggleCommand(hopperDistanceSupplier).withTimeout(6.0),
+            Set.of(m_robotDrive, m_hood, m_shooter, m_tomb, m_intake)));
+    NamedCommands.registerCommand(
+        "Shoot Jiggle",
+        Commands.runOnce(() -> startAutoShootJiggleCommand(hopperDistanceSupplier)));
+    NamedCommands.registerCommand(
+        "Stop Shoot Jiggle",
+        Commands.runOnce(this::stopAllAutoShootCommands));
     NamedCommands.registerCommand(
         "Intake",
         Commands.runOnce(this::startAutoIntakeCommand));
@@ -187,7 +217,7 @@ public class RobotContainer {
   }
 
   public void stopAutoNamedCommands() {
-    stopAutoShootCommand();
+    stopAllAutoShootCommands();
     stopAutoIntakeCommand();
     stopAutoSlowIntakeCommand();
     stopAutoTombCommand();
@@ -206,7 +236,7 @@ public class RobotContainer {
     DoubleSupplier hopperDistanceSupplier = createHopperDistanceSupplier();
     Command autoShootAlignCommand = hasVision
         ? Commands.parallel(
-            new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController),
+            new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController, true),
             m_hood.autoHoodFromDistanceCommand(hopperDistanceSupplier),
             m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier))
         : Commands.parallel(
@@ -218,6 +248,7 @@ public class RobotContainer {
         Commands.parallel(
             m_tomb.tomb(),
             m_intake.jiggleIntakeCommand()));
+    Command shootJiggleCommand = buildShootJiggleCommand(hopperDistanceSupplier);
     Command leftSideShotCommand = buildSideShotCommand(
         () -> VisionSubsystem.getAlliancePoseFromTagOffset(
             VisionConstants.kBlueLeftSideShotReferenceTagId,
@@ -262,10 +293,7 @@ public class RobotContainer {
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
     m_driverController.povRight().whileTrue(rightSideShotCommand);
     m_driverController.y().whileTrue(tombActionCommand);
-    m_driverController.b().whileTrue(
-        Commands.parallel(
-            autoShootAlignCommand,
-            delayedBFireCommand));
+    m_driverController.b().whileTrue(shootJiggleCommand);
     m_driverController.start().onTrue(Commands.runOnce(this::scheduleHoodAutoZero));
     m_driverController.back().onTrue(Commands.runOnce(m_lights::cycleMode, m_lights));
 
@@ -305,6 +333,22 @@ public class RobotContainer {
           .andThen(Commands.runOnce(this::disableAutoAimOverride))
           .andThen(Commands.runOnce(this::stopAutoNamedCommands));
     }
+
+    DriverStation.reportWarning(
+        "Auto chooser returned null, falling back to " + kDefaultAutoName,
+        false);
+    try {
+      return AutoBuilder.buildAuto(kDefaultAutoName)
+          .beforeStarting(this::stopAutoNamedCommands)
+          .beforeStarting(this::disableAutoAimOverride)
+          .andThen(Commands.runOnce(this::disableAutoAimOverride))
+          .andThen(Commands.runOnce(this::stopAutoNamedCommands));
+    } catch (Exception e) {
+      DriverStation.reportError(
+          "Failed to build fallback auto " + kDefaultAutoName + ": " + e.getMessage(),
+          false);
+    }
+
     return Commands.runOnce(() -> {
       disableAutoAimOverride();
       stopAutoNamedCommands();
@@ -343,8 +387,24 @@ public class RobotContainer {
         .finallyDo(() -> m_hood.setHoodAngle(ShooterConstants.kMinHoodAngleDegrees));
   }
 
+  private Command buildShootJiggleCommand(DoubleSupplier hopperDistanceSupplier) {
+    Command aimCommand = m_vision != null
+        ? new AimWhileDrivingCommand(m_vision, m_robotDrive, m_driverController, true)
+        : Commands.none();
+    Command delayedFeedCommand = Commands.sequence(
+        Commands.waitSeconds(0.5),
+        Commands.parallel(
+            m_tomb.tomb(),
+            m_intake.jiggleIntakeCommand()));
+    return Commands.parallel(
+        aimCommand,
+        m_hood.autoHoodFromDistanceCommand(hopperDistanceSupplier),
+        m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier),
+        delayedFeedCommand);
+  }
+
   private void startAutoShootCommand(DoubleSupplier hopperDistanceSupplier) {
-    stopAutoShootCommand();
+    stopAllAutoShootCommands();
     m_activeAutoShootCommand = m_shooter.autoShootFromDistanceCommand(hopperDistanceSupplier);
     CommandScheduler.getInstance().schedule(m_activeAutoShootCommand);
   }
@@ -355,6 +415,31 @@ public class RobotContainer {
       m_activeAutoShootCommand = null;
     }
     m_shooter.stopShooter();
+  }
+
+  private void startAutoShootJiggleCommand(DoubleSupplier hopperDistanceSupplier) {
+    stopAllAutoShootCommands();
+    m_activeAutoShootJiggleCommand = buildShootJiggleCommand(hopperDistanceSupplier);
+    CommandScheduler.getInstance().schedule(m_activeAutoShootJiggleCommand);
+  }
+
+  private void stopAllAutoShootCommands() {
+    stopAutoShootCommand();
+    stopAutoShootJiggleCommand();
+  }
+
+  private boolean isAutoShootJiggleActive() {
+    return m_activeAutoShootJiggleCommand != null && m_activeAutoShootJiggleCommand.isScheduled();
+  }
+
+  private void stopAutoShootJiggleCommand() {
+    if (m_activeAutoShootJiggleCommand != null) {
+      m_activeAutoShootJiggleCommand.cancel();
+      m_activeAutoShootJiggleCommand = null;
+    }
+    m_shooter.stopShooter();
+    m_tomb.stopTombMotors();
+    m_intake.stopIntakeMotors();
   }
 
   private void startAutoIntakeCommand() {

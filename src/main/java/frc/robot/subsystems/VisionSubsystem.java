@@ -603,6 +603,10 @@ public class VisionSubsystem extends SubsystemBase {
     return getDistanceMetersToTarget(robotPose, hopperCenterPose.get());
   }
 
+  public static Optional<Pose2d> getEstimatedHopperCenterPose() {
+    return getHopperCenterPose();
+  }
+
   public static OptionalDouble getDistanceMetersToTagOffsetTarget(
       Pose2d robotPose,
       int tagId,

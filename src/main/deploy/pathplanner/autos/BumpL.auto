@@ -29,6 +29,18 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "LShootToBallCollect"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LToRBallCollect"
+          }
+        },
+        {
           "type": "named",
           "data": {
             "name": "Shoot"
@@ -63,12 +75,24 @@
                 }
               },
               {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              },
+              {
                 "type": "wait",
                 "data": {
-                  "waitTime": 5.0
+                  "waitTime": 7.0
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopIntake"
           }
         },
         {
@@ -81,18 +105,6 @@
           "type": "named",
           "data": {
             "name": "StopTomb"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "LShootToBallCollect"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "LToRBallCollect"
           }
         }
       ]

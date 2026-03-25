@@ -118,7 +118,6 @@ public class TombSubsystem extends SubsystemBase {
     return this.startEnd(
         () -> {
           this.startTombMotors();
-
         },
         () -> {
           this.stopTombMotors();
@@ -147,11 +146,10 @@ public class TombSubsystem extends SubsystemBase {
       public Command feederTomb() {
     return this.startEnd(
         () -> {
-          this.setFeederTombPower(TombConstants.feederTombSpeed);
-            
+          this.setFeederVelocityRpm(TombConstants.feederTombVelocityRpm);
         },
         () -> {
-          this.setFeederTombPower(0.0);
+          this.setFeederVelocityRpm(0.0);
         });
   }
 

@@ -115,6 +115,8 @@ public final class Constants {
     public static final double backTombSpeed = 0.95;
     public static final double feederTombSpeed = 0.95;
     public static final double feederTombVelocityRpm = -5000.0;
+    // public static final double feederPulseForwardSeconds = 1.0;
+    // public static final double feederPulseReverseSeconds = 0.05;
 
     // Reverse controls
     public static final double reverseFrontTombSpeed = 0.95;
@@ -310,6 +312,10 @@ public final class Constants {
     public static final double kAimingToleranceDegrees = 0.0;
     public static final double kAimingTimeoutSeconds = 2.0;
     public static final double kAimRotationSign = 1.0;
+    public static final double kAimOrbitJiggleDelaySeconds = 1.0;
+    public static final double kAimOrbitJiggleDistanceMeters = Units.inchesToMeters(2
+    );
+    public static final double kAimOrbitJiggleHalfCycleSeconds = .2;
 
     // Moving-shot lead compensation
     public static final double kBallExitSpeedMetersPerSecond = 9.0;

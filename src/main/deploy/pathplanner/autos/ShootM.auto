@@ -39,15 +39,15 @@
           "data": {
             "commands": [
               {
-                "type": "wait",
+                "type": "named",
                 "data": {
-                  "waitTime": 5.0
+                  "name": "Shoot"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Shoot"
+                  "name": "Intake"
                 }
               },
               {
@@ -57,9 +57,9 @@
                 }
               },
               {
-                "type": "named",
+                "type": "wait",
                 "data": {
-                  "name": "Intake"
+                  "waitTime": 5.0
                 }
               }
             ]
