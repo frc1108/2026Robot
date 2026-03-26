@@ -217,7 +217,7 @@ public final class Constants {
     public static final double kHoodAutoZeroVelocityI = 0.0;
     public static final double kHoodAutoZeroVelocityD = 0.0;
     public static final double kHoodAutoZeroVelocityV = 0.12;
-    public static final double kHoodAutoZeroCurrentThresholdAmps = 2.8;
+    public static final double kHoodAutoZeroCurrentThresholdAmps = 2.25;
     public static final double kHoodAutoZeroCurrentDebounceSeconds = 0.15;
     public static final double kHoodAutoZeroMinRunSeconds = 0.20;
 
@@ -278,6 +278,10 @@ public final class Constants {
     // Vision pose filtering
     public static final double kMaxDistanceMeters = 5.5;
     public static final double kMaxAmbiguity = 0.35;
+    public static final double kVisionStdDevCloseXY = 0.5;
+    public static final double kVisionStdDevCloseTheta = 0.8;
+    public static final double kVisionStdDevFarXY = 3.0;
+    public static final double kVisionStdDevFarTheta = 6.0;
 
     // Main hopper / hub target definition
     public static final int kBlueHopperTagId = 26;

@@ -285,9 +285,7 @@ public class RobotContainer {
     m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
     m_driverController.x().whileTrue(m_tomb.reverseFeederCommand());
     m_driverController.a().onTrue(Commands.runOnce(m_robotDrive::zeroHeading, m_robotDrive));
-    if (hasVision) {
-      m_driverController.povUp().whileTrue(new FollowFuelCommand(m_vision, m_robotDrive));
-    }
+    m_driverController.povUp().onTrue(Commands.runOnce(m_robotDrive::flipHeading180, m_robotDrive));
     m_driverController.povLeft().whileTrue(leftSideShotCommand);
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());

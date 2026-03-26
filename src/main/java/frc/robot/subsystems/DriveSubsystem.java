@@ -15,6 +15,7 @@ import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -167,6 +168,10 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
+  public void flipHeading180() {
+    m_gyro.setYaw(Rotation2d.fromDegrees(getHeading()).plus(Rotation2d.k180deg).getDegrees());
+  }
+
   public double getHeading() {
     return m_gyro.getRotation2d().getDegrees();
   }
@@ -174,6 +179,18 @@ public class DriveSubsystem extends SubsystemBase {
   // Vision updates are fused into drivetrain pose estimation.
   public void addVisionMeasurement(Pose2d estimatedPose, double timestampSeconds) {
     m_poseEstimator.addVisionMeasurement(estimatedPose, timestampSeconds);
+    loggedPose = estimatedPose;
+  }
+
+  public void addVisionMeasurementWithStdDevs(
+      Pose2d estimatedPose,
+      double timestampSeconds,
+      double xyStdDevMeters,
+      double thetaStdDevRadians) {
+    m_poseEstimator.addVisionMeasurement(
+        estimatedPose,
+        timestampSeconds,
+        VecBuilder.fill(xyStdDevMeters, xyStdDevMeters, thetaStdDevRadians));
     loggedPose = estimatedPose;
   }
 

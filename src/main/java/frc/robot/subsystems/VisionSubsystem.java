@@ -198,8 +198,7 @@ public class VisionSubsystem extends SubsystemBase {
           badTargets.add(target);
           continue;
         }
-        var distanceToTag = PhotonUtils.getDistanceToPose(robotPoseForFiltering, tagPose.get().toPose2d());
-        if (target.getPoseAmbiguity() > VisionConstants.kMaxAmbiguity || distanceToTag > VisionConstants.kMaxDistanceMeters) {
+        if (target.getPoseAmbiguity() > VisionConstants.kMaxAmbiguity) {
           badTargets.add(target);
         }
       }
@@ -210,7 +209,32 @@ public class VisionSubsystem extends SubsystemBase {
       if (poseResult.isPresent()) {
         EstimatedRobotPose estimatedPose = poseResult.get();
         estimated3dPose = estimatedPose.estimatedPose;
-        m_consumer.accept(estimatedPose.estimatedPose.toPose2d(), estimatedPose.timestampSeconds);
+        double minDistanceToTag = Double.POSITIVE_INFINITY;
+        for (PhotonTrackedTarget target : result.targets) {
+          var tagPose = m_fieldLayout.getTagPose(target.getFiducialId());
+          if (tagPose.isEmpty()) {
+            continue;
+          }
+          double distanceToTag = PhotonUtils.getDistanceToPose(
+              estimatedPose.estimatedPose.toPose2d(),
+              tagPose.get().toPose2d());
+          minDistanceToTag = Math.min(minDistanceToTag, distanceToTag);
+        }
+
+        boolean far = minDistanceToTag > VisionConstants.kMaxDistanceMeters;
+        if (far) {
+          drive.addVisionMeasurementWithStdDevs(
+              estimatedPose.estimatedPose.toPose2d(),
+              estimatedPose.timestampSeconds,
+              VisionConstants.kVisionStdDevFarXY,
+              VisionConstants.kVisionStdDevFarTheta);
+        } else {
+          drive.addVisionMeasurementWithStdDevs(
+              estimatedPose.estimatedPose.toPose2d(),
+              estimatedPose.timestampSeconds,
+              VisionConstants.kVisionStdDevCloseXY,
+              VisionConstants.kVisionStdDevCloseTheta);
+        }
         String camName = cam.getName();
         lastEstimatorCameraName = camName;
         if (i == 0) {
