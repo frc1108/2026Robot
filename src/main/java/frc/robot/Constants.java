@@ -178,7 +178,7 @@ public final class Constants {
 
     // Side-shot POV distance-to-RPM table
     public static final double[] kSideShotDistanceMeters = {2.0, 6.0, 10.0};
-    public static final double[] kSideShotDistanceRpm = {2400.0, 4000.0, 5000.0};
+    public static final double[] kSideShotDistanceRpm = {2200.0, 3800.0, 4700.0};
 
     // Distance-based shooter smoothing
     public static final double kAutoShooterDistanceFilterAlpha = 0.01;
@@ -297,7 +297,7 @@ public final class Constants {
     public static final double kSideShotOffsetForwardMeters = Units.inchesToMeters(120.0);
     public static final double kLeftSideShotOffsetLeftMeters = Units.inchesToMeters(-100.0);
     public static final double kRightSideShotOffsetLeftMeters = Units.inchesToMeters(100.0);
-    public static final double kSideShotHoodAngleDegrees = 40.0;
+    public static final double kSideShotHoodAngleDegrees = 42.5;
 
     // Auto-align reference point and shooter axis
     public static final double kAutoAlignCenterShiftForwardMeters = Units.inchesToMeters(-7.0);
