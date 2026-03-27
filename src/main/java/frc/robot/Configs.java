@@ -70,7 +70,7 @@ public final class Configs {
     }}
 
     public static final class Feeder {
-                public static final SparkMaxConfig feederConfig = new SparkMaxConfig();
+                public static final SparkFlexConfig feederConfig = new SparkFlexConfig();
 
         static{
         feederConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(40).voltageCompensation(10);

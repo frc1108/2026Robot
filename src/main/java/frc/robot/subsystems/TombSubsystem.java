@@ -8,6 +8,7 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -22,7 +23,7 @@ import frc.robot.Constants.TombConstants;
 public class TombSubsystem extends SubsystemBase {
   final SparkMax m_frontTomb = new SparkMax(TombConstants.frontTombCanId, MotorType.kBrushless);
   final SparkMax m_backTomb = new SparkMax(TombConstants.backTombCanId, MotorType.kBrushless);
-  final SparkMax m_feederTomb = new SparkMax(TombConstants.feederTombCanId, MotorType.kBrushless);
+  final SparkFlex m_feederTomb = new SparkFlex(TombConstants.feederTombCanId, MotorType.kBrushless);
   private SparkClosedLoopController m_feederClosedLoopController;
   private RelativeEncoder m_feederEncoder;
   // By default use open-loop percent output for the feeder (maps RPM -> percent)
