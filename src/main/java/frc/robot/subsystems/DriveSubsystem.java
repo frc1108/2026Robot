@@ -168,6 +168,10 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
+  public void setYawZero() {
+    m_gyro.setYaw(0.0);
+  }
+
   public void flipHeading180() {
     m_gyro.setYaw(Rotation2d.fromDegrees(getHeading()).plus(Rotation2d.k180deg).getDegrees());
   }

@@ -298,6 +298,7 @@ public class RobotContainer {
     m_operatorController.rightBumper().whileTrue(m_hood.hoodUpCommand());
     m_operatorController.leftBumper().whileTrue(m_hood.hoodDownCommand());
     m_operatorController.a().whileTrue(m_tomb.reverseFeederCommand());
+    m_operatorController.y().onTrue(Commands.runOnce(m_robotDrive::setYawZero, m_robotDrive));
     m_operatorController.start().onTrue(Commands.runOnce(this::scheduleHoodAutoZero));
 
     Shuffleboard.getTab("Hood")
