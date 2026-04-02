@@ -22,7 +22,7 @@ import frc.robot.Constants.TombConstants;
 
 public class TombSubsystem extends SubsystemBase {
   final SparkMax m_frontTomb = new SparkMax(TombConstants.frontTombCanId, MotorType.kBrushless);
-  final SparkMax m_backTomb = new SparkMax(TombConstants.backTombCanId, MotorType.kBrushless);
+  final SparkFlex m_backTomb = new SparkFlex(TombConstants.backTombCanId, MotorType.kBrushless);
   final SparkFlex m_feederTomb = new SparkFlex(TombConstants.feederTombCanId, MotorType.kBrushless);
   private SparkClosedLoopController m_feederClosedLoopController;
   private RelativeEncoder m_feederEncoder;
@@ -41,7 +41,7 @@ public class TombSubsystem extends SubsystemBase {
         ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
   m_backTomb.configure(
-    Configs.Intake.intakeConfig,
+    Configs.Intake.vortexIntakeConfig,
     ResetMode.kResetSafeParameters,
     PersistMode.kPersistParameters);
   // Initialize closed-loop controller for the feeder motor
@@ -50,7 +50,7 @@ public class TombSubsystem extends SubsystemBase {
   // Defensive: ensure IdleMode is Brake on each tomb controller
   m_frontTomb.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
     PersistMode.kPersistParameters);
-  m_backTomb.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
+  m_backTomb.configure(new com.revrobotics.spark.config.SparkFlexConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
     PersistMode.kPersistParameters);
   }
 
