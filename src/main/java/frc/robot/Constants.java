@@ -170,8 +170,8 @@ public final class Constants {
     public static final double kShooterVelocityS = 0.0;
 
     // Main hub / hopper distance-to-RPM table
-    public static final double[] kShooterDistanceMeters = {1.5, 2.0, 2.5, 3.5, 4.0, 4.5};
-    public static final double[] kShooterDistanceRpm = {1600.0, 1675.0, 1845.0, 2200.0, 2700.0, 3300.0};
+    public static final double[] kShooterDistanceMeters = {1.5, 2.0, 2.5, 3.5, 4.0, 4.5,5.0};
+    public static final double[] kShooterDistanceRpm = {1600.0, 1675.0, 1845.0, 2200.0, 2700.0, 3300.0, 3900.0};
 
     // Side-shot POV distance-to-RPM table
     public static final double[] kSideShotDistanceMeters = {2.0, 6.0, 10.0};
@@ -262,14 +262,14 @@ public final class Constants {
     public static final double kFrontSideCameraOffsetZ = 0.7112;
     public static final double kFrontSideCameraRotX = 0.0;
     public static final double kFrontSideCameraRotY = 0.0;
-    public static final double kFrontSideCameraRotZ = 0.;
+    public static final double kFrontSideCameraRotZ = 0.0;
 
     public static final double kBackCameraOffsetX = -0.057;
-    public static final double kBackCameraOffsetY = -0.191;
+    public static final double kBackCameraOffsetY = 0.191;
     public static final double kBackCameraOffsetZ = 0.635;
     public static final double kBackCameraRotX = 0.0;
     public static final double kBackCameraRotY = 0.0;
-    public static final double kBackCameraRotZ = 3.14159;
+    public static final double kBackCameraRotZ = 3.1415;
 
     // Vision pose filtering
     public static final double kMaxDistanceMeters = 5.5;
