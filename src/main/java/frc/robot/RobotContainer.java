@@ -19,14 +19,12 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.AimAtFieldPoseWhileDrivingCommand;
 import frc.robot.commands.AimWhileDrivingCommand;
-import frc.robot.commands.FollowFuelCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -316,15 +314,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    if (m_vision != null && AutoConstants.kUseFuelObjectAuto) {
-      return new FollowFuelCommand(m_vision, m_robotDrive)
-          .beforeStarting(this::stopAutoNamedCommands)
-          .withTimeout(AutoConstants.kFuelAutoTimeoutSeconds)
-          .beforeStarting(this::disableAutoAimOverride)
-          .andThen(Commands.runOnce(this::disableAutoAimOverride))
-          .andThen(Commands.runOnce(this::stopAutoNamedCommands));
-    }
-
     if (m_autoChooser != null && m_autoChooser.getSelected() != null) {
       return m_autoChooser.getSelected()
           .beforeStarting(this::stopAutoNamedCommands)

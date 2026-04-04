@@ -1,13 +1,8 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
@@ -26,15 +21,12 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.VisionConstants;
@@ -42,17 +34,19 @@ import frc.robot.Constants.VisionConstants;
 @Logged
 public class VisionSubsystem extends SubsystemBase {
   private static final AprilTagFieldLayout kFieldLayout = loadFieldLayout();
+
   private final List<PhotonCamera> m_photonCameras = new ArrayList<>();
   private final List<PhotonPoseEstimator> m_poseEstimators = new ArrayList<>();
   private final AprilTagFieldLayout m_fieldLayout;
   private final BiConsumer<Pose2d, Double> m_consumer;
   @NotLogged private final DriveSubsystem drive;
+
   private Pose3d estimated3dPose = new Pose3d();
   @Logged private Pose3d leftEstimated3dPose = new Pose3d();
   @Logged private Pose3d rightEstimated3dPose = new Pose3d();
   @Logged private Pose3d frontEstimated3dPose = new Pose3d();
+  @Logged private Pose3d backEstimated3dPose = new Pose3d();
   @Logged private String lastEstimatorCameraName = "";
-  private final PhotonCamera m_fuelCamera = new PhotonCamera(VisionConstants.kFuelCameraName);
 
   @Logged private double hopperYaw = 0.0;
   @Logged private double hopperPitch = 0.0;
@@ -62,16 +56,6 @@ public class VisionSubsystem extends SubsystemBase {
   @Logged private double autoAlignReferenceX = 0.0;
   @Logged private double autoAlignReferenceY = 0.0;
   @Logged private double autoAlignTargetHeadingDeg = 0.0;
-  @Logged private boolean fuelVisible = false;
-  @Logged private double fuelYaw = 0.0;
-  @Logged private double fuelPitch = 0.0;
-  @Logged private double fuelArea = 0.0;
-  @Logged private int fuelTargetCount = 0;
-  @Logged private int fuelSelectedClusterCount = 0;
-  private final double[][] fuelHeatmap = new double[VisionConstants.kFuelHeatmapCellsX][VisionConstants.kFuelHeatmapCellsY];
-  private final Field2d fuelHeatmapField = new Field2d();
-  private double lastHeatmapTimestampSec = Double.NaN;
-  private double lastHeatmapPublishTimestampSec = Double.NaN;
 
   private static AprilTagFieldLayout loadFieldLayout() {
     try {
@@ -90,18 +74,12 @@ public class VisionSubsystem extends SubsystemBase {
   public VisionSubsystem(
       BiConsumer<Pose2d, Double> consumer,
       DriveSubsystem drive,
-      String leftSideCamera,
+      String cameraName,
       Transform3d cameraOffset) throws IOException {
     m_fieldLayout = kFieldLayout;
     m_consumer = consumer;
     this.drive = drive;
-
-    m_photonCameras.add(new PhotonCamera(leftSideCamera));
-    m_poseEstimators.add(new PhotonPoseEstimator(
-        m_fieldLayout,
-        PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        cameraOffset));
-    setupFuelHeatmapWidget();
+    addPoseCamera(cameraName, cameraOffset);
   }
 
   public VisionSubsystem(BiConsumer<Pose2d, Double> consumer, DriveSubsystem drive) throws IOException {
@@ -109,68 +87,68 @@ public class VisionSubsystem extends SubsystemBase {
     m_consumer = consumer;
     this.drive = drive;
 
-    Transform3d leftOffset = new Transform3d(
-        new Translation3d(
-            VisionConstants.kLeftCameraOffsetX,
-            VisionConstants.kLeftCameraOffsetY,
-            VisionConstants.kLeftCameraOffsetZ),
-        new Rotation3d(
-            VisionConstants.kLeftCameraRotX,
-            VisionConstants.kLeftCameraRotY,
-            VisionConstants.kLeftCameraRotZ));
-    m_photonCameras.add(new PhotonCamera(VisionConstants.kLeftCameraName));
+    addPoseCamera(
+        VisionConstants.kLeftCameraName,
+        new Transform3d(
+            new Translation3d(
+                VisionConstants.kLeftCameraOffsetX,
+                VisionConstants.kLeftCameraOffsetY,
+                VisionConstants.kLeftCameraOffsetZ),
+            new Rotation3d(
+                VisionConstants.kLeftCameraRotX,
+                VisionConstants.kLeftCameraRotY,
+                VisionConstants.kLeftCameraRotZ)));
+    addPoseCamera(
+        VisionConstants.kRightCameraName,
+        new Transform3d(
+            new Translation3d(
+                VisionConstants.kRightCameraOffsetX,
+                VisionConstants.kRightCameraOffsetY,
+                VisionConstants.kRightCameraOffsetZ),
+            new Rotation3d(
+                VisionConstants.kRightCameraRotX,
+                VisionConstants.kRightCameraRotY,
+                VisionConstants.kRightCameraRotZ)));
+    addPoseCamera(
+        VisionConstants.kFrontSideCameraName,
+        new Transform3d(
+            new Translation3d(
+                VisionConstants.kFrontSideCameraOffsetX,
+                VisionConstants.kFrontSideCameraOffsetY,
+                VisionConstants.kFrontSideCameraOffsetZ),
+            new Rotation3d(
+                VisionConstants.kFrontSideCameraRotX,
+                VisionConstants.kFrontSideCameraRotY,
+                VisionConstants.kFrontSideCameraRotZ)));
+    addPoseCamera(
+        VisionConstants.kBackCameraName,
+        new Transform3d(
+            new Translation3d(
+                VisionConstants.kBackCameraOffsetX,
+                VisionConstants.kBackCameraOffsetY,
+                VisionConstants.kBackCameraOffsetZ),
+            new Rotation3d(
+                VisionConstants.kBackCameraRotX,
+                VisionConstants.kBackCameraRotY,
+                VisionConstants.kBackCameraRotZ)));
+  }
+
+  private void addPoseCamera(String cameraName, Transform3d cameraOffset) {
+    m_photonCameras.add(new PhotonCamera(cameraName));
     m_poseEstimators.add(new PhotonPoseEstimator(
         m_fieldLayout,
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        leftOffset));
-
-    Transform3d rightOffset = new Transform3d(
-        new Translation3d(
-            VisionConstants.kRightCameraOffsetX,
-            VisionConstants.kRightCameraOffsetY,
-            VisionConstants.kRightCameraOffsetZ),
-        new Rotation3d(
-            VisionConstants.kRightCameraRotX,
-            VisionConstants.kRightCameraRotY,
-            VisionConstants.kRightCameraRotZ));
-    m_photonCameras.add(new PhotonCamera(VisionConstants.kRightCameraName));
-    m_poseEstimators.add(new PhotonPoseEstimator(
-        m_fieldLayout,
-        PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        rightOffset));
-
-    Transform3d frontSideOffset = new Transform3d(
-        new Translation3d(
-            VisionConstants.kFrontSideCameraOffsetX,
-            VisionConstants.kFrontSideCameraOffsetY,
-            VisionConstants.kFrontSideCameraOffsetZ),
-        new Rotation3d(
-            VisionConstants.kFrontSideCameraRotX,
-            VisionConstants.kFrontSideCameraRotY,
-            VisionConstants.kFrontSideCameraRotZ));
-    m_photonCameras.add(new PhotonCamera(VisionConstants.kFrontSideCameraName));
-    m_poseEstimators.add(new PhotonPoseEstimator(
-        m_fieldLayout,
-        PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        frontSideOffset));
-
-    setupFuelHeatmapWidget();
+        cameraOffset));
   }
 
   @Override
   public void periodic() {
     publishCameraConnectionStatus();
-
-    // Always update robot pose on the Field2d so the icon moves smoothly.
-    fuelHeatmapField.setRobotPose(drive.getPose());
-    fuelHeatmapField.getObject("Robot").setPose(drive.getPose());
-    SmartDashboard.putData("Fuel Heatmap", fuelHeatmapField);
     SmartDashboard.putNumber("Vision/RobotPoseX", drive.getPose().getX());
     SmartDashboard.putNumber("Vision/RobotPoseY", drive.getPose().getY());
     SmartDashboard.putNumber("Vision/RobotPoseDeg", drive.getPose().getRotation().getDegrees());
 
     Pose2d fallbackPose = drive.getPose();
-    // Use fused drive pose until we have at least one vision estimate.
     Pose2d robotPoseForFiltering =
         lastEstimatorCameraName.isEmpty() ? fallbackPose : estimated3dPose.toPose2d();
 
@@ -194,65 +172,56 @@ public class VisionSubsystem extends SubsystemBase {
       List<PhotonTrackedTarget> badTargets = new ArrayList<>();
       for (PhotonTrackedTarget target : result.targets) {
         var tagPose = m_fieldLayout.getTagPose(target.getFiducialId());
-        if (tagPose.isEmpty()) {
-          badTargets.add(target);
-          continue;
-        }
-        if (target.getPoseAmbiguity() > VisionConstants.kMaxAmbiguity) {
+        if (tagPose.isEmpty() || target.getPoseAmbiguity() > VisionConstants.kMaxAmbiguity) {
           badTargets.add(target);
         }
       }
       result.targets.removeAll(badTargets);
+      if (!result.hasTargets()) {
+        continue;
+      }
 
-      // Update this camera's pose estimator
       Optional<EstimatedRobotPose> poseResult = est.update(result);
       if (poseResult.isPresent()) {
         EstimatedRobotPose estimatedPose = poseResult.get();
         estimated3dPose = estimatedPose.estimatedPose;
+
         double minDistanceToTag = Double.POSITIVE_INFINITY;
         for (PhotonTrackedTarget target : result.targets) {
           var tagPose = m_fieldLayout.getTagPose(target.getFiducialId());
           if (tagPose.isEmpty()) {
             continue;
           }
-          double distanceToTag = PhotonUtils.getDistanceToPose(
-              estimatedPose.estimatedPose.toPose2d(),
-              tagPose.get().toPose2d());
+          double distanceToTag =
+              PhotonUtils.getDistanceToPose(estimatedPose.estimatedPose.toPose2d(), tagPose.get().toPose2d());
           minDistanceToTag = Math.min(minDistanceToTag, distanceToTag);
         }
 
         boolean far = minDistanceToTag > VisionConstants.kMaxDistanceMeters;
-        if (far) {
-          drive.addVisionMeasurementWithStdDevs(
-              estimatedPose.estimatedPose.toPose2d(),
-              estimatedPose.timestampSeconds,
-              VisionConstants.kVisionStdDevFarXY,
-              VisionConstants.kVisionStdDevFarTheta);
-        } else {
-          drive.addVisionMeasurementWithStdDevs(
-              estimatedPose.estimatedPose.toPose2d(),
-              estimatedPose.timestampSeconds,
-              VisionConstants.kVisionStdDevCloseXY,
-              VisionConstants.kVisionStdDevCloseTheta);
-        }
-        String camName = cam.getName();
-        lastEstimatorCameraName = camName;
+        drive.addVisionMeasurementWithStdDevs(
+            estimatedPose.estimatedPose.toPose2d(),
+            estimatedPose.timestampSeconds,
+            far ? VisionConstants.kVisionStdDevFarXY : VisionConstants.kVisionStdDevCloseXY,
+            far ? VisionConstants.kVisionStdDevFarTheta : VisionConstants.kVisionStdDevCloseTheta);
+
+        lastEstimatorCameraName = cam.getName();
         if (i == 0) {
           leftEstimated3dPose = estimatedPose.estimatedPose;
         } else if (i == 1) {
           rightEstimated3dPose = estimatedPose.estimatedPose;
         } else if (i == 2) {
           frontEstimated3dPose = estimatedPose.estimatedPose;
+        } else if (i == 3) {
+          backEstimated3dPose = estimatedPose.estimatedPose;
         }
       }
 
       for (PhotonTrackedTarget target : result.targets) {
-        if (target.getFiducialId() == getAllianceHopperTagId()) {
-          if (target.getPoseAmbiguity() < bestHopperAmbiguity) {
-            bestHopperAmbiguity = target.getPoseAmbiguity();
-            bestHopperTarget = target;
-            bestHopperPoseForDistance = estimated3dPose.toPose2d();
-          }
+        if (target.getFiducialId() == getAllianceHopperTagId()
+            && target.getPoseAmbiguity() < bestHopperAmbiguity) {
+          bestHopperAmbiguity = target.getPoseAmbiguity();
+          bestHopperTarget = target;
+          bestHopperPoseForDistance = estimated3dPose.toPose2d();
         }
       }
     }
@@ -263,9 +232,9 @@ public class VisionSubsystem extends SubsystemBase {
       hopperPitch = bestHopperTarget.getPitch();
       hopperAmbiguity = bestHopperTarget.getPoseAmbiguity();
       var tagPose = m_fieldLayout.getTagPose(bestHopperTarget.getFiducialId());
-      if (tagPose.isPresent()) {
-        hopperDistance = PhotonUtils.getDistanceToPose(bestHopperPoseForDistance, tagPose.get().toPose2d());
-      }
+      hopperDistance = tagPose.isPresent()
+          ? PhotonUtils.getDistanceToPose(bestHopperPoseForDistance, tagPose.get().toPose2d())
+          : 0.0;
     } else {
       hopperVisible = false;
       hopperYaw = 0.0;
@@ -273,254 +242,12 @@ public class VisionSubsystem extends SubsystemBase {
       hopperDistance = 0.0;
       hopperAmbiguity = 1.0;
     }
-
-    updateFuelTargeting();
   }
 
   private void publishCameraConnectionStatus() {
     for (PhotonCamera camera : m_photonCameras) {
-      String name = camera.getName();
-      SmartDashboard.putBoolean("Vision/CameraConnected/" + name, camera.isConnected());
+      SmartDashboard.putBoolean("Vision/CameraConnected/" + camera.getName(), camera.isConnected());
     }
-    SmartDashboard.putBoolean("Vision/CameraConnected/" + m_fuelCamera.getName(), m_fuelCamera.isConnected());
-  }
-
-  private void updateFuelTargeting() {
-    applyHeatmapDecay();
-
-    if (!m_fuelCamera.isConnected()) {
-      fuelVisible = false;
-      fuelYaw = 0.0;
-      fuelPitch = 0.0;
-      fuelArea = 0.0;
-      fuelTargetCount = 0;
-      fuelSelectedClusterCount = 0;
-      publishFuelHeatmapIfDue();
-      return;
-    }
-
-    var result = m_fuelCamera.getLatestResult();
-    if (!result.hasTargets()) {
-      fuelVisible = false;
-      fuelYaw = 0.0;
-      fuelPitch = 0.0;
-      fuelArea = 0.0;
-      fuelTargetCount = 0;
-      fuelSelectedClusterCount = 0;
-      publishFuelHeatmapIfDue();
-      return;
-    }
-
-    fuelTargetCount = result.targets.size();
-    var selectedCluster = selectBestFuelCluster(result.targets);
-
-    fuelVisible = true;
-    fuelYaw = selectedCluster.meanYawDeg;
-    fuelPitch = selectedCluster.meanPitchDeg;
-    fuelArea = selectedCluster.totalArea;
-    fuelSelectedClusterCount = selectedCluster.memberCount;
-
-    updateFuelHeatmapFromTargets(result.targets);
-    publishFuelHeatmapIfDue();
-  }
-
-  private void publishFuelHeatmapIfDue() {
-    if (!VisionConstants.kEnableFuelHeatmap) {
-      return;
-    }
-
-    double now = Timer.getFPGATimestamp();
-    if (!Double.isNaN(lastHeatmapPublishTimestampSec)
-        && (now - lastHeatmapPublishTimestampSec) < VisionConstants.kFuelHeatmapPublishPeriodSeconds) {
-      return;
-    }
-
-    lastHeatmapPublishTimestampSec = now;
-    publishFuelHeatmapHotspots();
-  }
-
-  private void setupFuelHeatmapWidget() {
-    Shuffleboard.getTab("Vision")
-        .add("Fuel Heatmap", fuelHeatmapField)
-        .withProperties(Map.of(
-            "Field", VisionConstants.kFuelHeatmapFieldBackground,
-            "Robot Width", VisionConstants.kRobotWidthMeters,
-            "Robot Length", VisionConstants.kRobotLengthMeters))
-        .withPosition(0, 0)
-        .withSize(7, 4);
-    Shuffleboard.getTab("Vision").addNumber("Hopper Distance (m)", this::getHopperDistance);
-    SmartDashboard.putData("Fuel Heatmap", fuelHeatmapField);
-  }
-
-  private void applyHeatmapDecay() {
-    double now = Timer.getFPGATimestamp();
-    if (Double.isNaN(lastHeatmapTimestampSec)) {
-      lastHeatmapTimestampSec = now;
-      return;
-    }
-
-    double dt = now - lastHeatmapTimestampSec;
-    lastHeatmapTimestampSec = now;
-    if (dt <= 0.0) {
-      return;
-    }
-
-    double decayScale = Math.max(0.0, 1.0 - (VisionConstants.kFuelHeatmapDecayPerSecond * dt));
-    for (int x = 0; x < VisionConstants.kFuelHeatmapCellsX; x++) {
-      for (int y = 0; y < VisionConstants.kFuelHeatmapCellsY; y++) {
-        fuelHeatmap[x][y] *= decayScale;
-      }
-    }
-  }
-
-  private void updateFuelHeatmapFromTargets(List<PhotonTrackedTarget> targets) {
-    Pose2d robotPose = drive.getPose();
-    double fieldLength = m_fieldLayout.getFieldLength();
-    double fieldWidth = m_fieldLayout.getFieldWidth();
-
-    for (PhotonTrackedTarget target : targets) {
-      double area = target.getArea();
-      if (area <= 0.0) {
-        continue;
-      }
-
-      double estimatedDistanceMeters = estimateFuelDistanceMetersFromArea(area);
-      double headingDeg = robotPose.getRotation().getDegrees()
-          + Math.toDegrees(VisionConstants.kFrontFuelCameraRotZ)
-          + target.getYaw();
-      double headingRad = Math.toRadians(headingDeg);
-      double pointX = robotPose.getX() + estimatedDistanceMeters * Math.cos(headingRad);
-      double pointY = robotPose.getY() + estimatedDistanceMeters * Math.sin(headingRad);
-
-      if (pointX < 0.0 || pointX > fieldLength || pointY < 0.0 || pointY > fieldWidth) {
-        continue;
-      }
-
-      int cellX = Math.min(
-          VisionConstants.kFuelHeatmapCellsX - 1,
-          Math.max(0, (int) ((pointX / fieldLength) * VisionConstants.kFuelHeatmapCellsX)));
-      int cellY = Math.min(
-          VisionConstants.kFuelHeatmapCellsY - 1,
-          Math.max(0, (int) ((pointY / fieldWidth) * VisionConstants.kFuelHeatmapCellsY)));
-
-      fuelHeatmap[cellX][cellY] += area;
-    }
-  }
-
-  private double estimateFuelDistanceMetersFromArea(double area) {
-    double estimate = VisionConstants.kFuelAreaToDistanceScale / Math.sqrt(area);
-    return MathUtil.clamp(
-        estimate,
-        VisionConstants.kFuelMinEstimatedDistanceMeters,
-        VisionConstants.kFuelMaxEstimatedDistanceMeters);
-  }
-
-  private void publishFuelHeatmapHotspots() {
-    double fieldLength = m_fieldLayout.getFieldLength();
-    double fieldWidth = m_fieldLayout.getFieldWidth();
-
-    class Hotspot {
-      final int x;
-      final int y;
-      final double value;
-
-      Hotspot(int x, int y, double value) {
-        this.x = x;
-        this.y = y;
-        this.value = value;
-      }
-    }
-
-    List<Hotspot> top = new ArrayList<>();
-    for (int x = 0; x < VisionConstants.kFuelHeatmapCellsX; x++) {
-      for (int y = 0; y < VisionConstants.kFuelHeatmapCellsY; y++) {
-        double value = fuelHeatmap[x][y];
-        if (value < VisionConstants.kFuelHeatmapMinHotspotValue) {
-          continue;
-        }
-
-        Hotspot candidate = new Hotspot(x, y, value);
-        int insert = -1;
-        for (int i = 0; i < top.size(); i++) {
-          if (candidate.value > top.get(i).value) {
-            insert = i;
-            break;
-          }
-        }
-        if (insert == -1) {
-          if (top.size() < VisionConstants.kFuelHeatmapHotspotsToDisplay) {
-            top.add(candidate);
-          }
-        } else {
-          top.add(insert, candidate);
-          if (top.size() > VisionConstants.kFuelHeatmapHotspotsToDisplay) {
-            top.remove(top.size() - 1);
-          }
-        }
-      }
-    }
-
-    for (int i = 0; i < VisionConstants.kFuelHeatmapHotspotsToDisplay; i++) {
-      if (i < top.size()) {
-        Hotspot hotspot = top.get(i);
-        double xMeters = ((hotspot.x + 0.5) / VisionConstants.kFuelHeatmapCellsX) * fieldLength;
-        double yMeters = ((hotspot.y + 0.5) / VisionConstants.kFuelHeatmapCellsY) * fieldWidth;
-        fuelHeatmapField.getObject("FuelHotspot" + i).setPose(new Pose2d(xMeters, yMeters, Rotation2d.kZero));
-      } else {
-        fuelHeatmapField.getObject("FuelHotspot" + i).setPose(new Pose2d(-1.0, -1.0, Rotation2d.kZero));
-      }
-    }
-  }
-
-  private static final class FuelCluster {
-    double meanYawDeg;
-    double meanPitchDeg;
-    double totalArea;
-    int memberCount;
-  }
-
-  private FuelCluster selectBestFuelCluster(List<PhotonTrackedTarget> targets) {
-    List<FuelCluster> clusters = new ArrayList<>();
-
-    for (PhotonTrackedTarget target : targets) {
-      double yaw = target.getYaw();
-      double pitch = target.getPitch();
-      double area = target.getArea();
-
-      FuelCluster matched = null;
-      for (FuelCluster cluster : clusters) {
-        if (Math.abs(yaw - cluster.meanYawDeg) <= VisionConstants.kFuelClusterYawToleranceDegrees
-            && Math.abs(pitch - cluster.meanPitchDeg) <= VisionConstants.kFuelClusterPitchToleranceDegrees) {
-          matched = cluster;
-          break;
-        }
-      }
-
-      if (matched == null) {
-        FuelCluster newCluster = new FuelCluster();
-        newCluster.meanYawDeg = yaw;
-        newCluster.meanPitchDeg = pitch;
-        newCluster.totalArea = area;
-        newCluster.memberCount = 1;
-        clusters.add(newCluster);
-      } else {
-        int newCount = matched.memberCount + 1;
-        matched.meanYawDeg = ((matched.meanYawDeg * matched.memberCount) + yaw) / newCount;
-        matched.meanPitchDeg = ((matched.meanPitchDeg * matched.memberCount) + pitch) / newCount;
-        matched.totalArea += area;
-        matched.memberCount = newCount;
-      }
-    }
-
-    FuelCluster best = clusters.get(0);
-    for (int i = 1; i < clusters.size(); i++) {
-      FuelCluster candidate = clusters.get(i);
-      if (candidate.memberCount > best.memberCount
-          || (candidate.memberCount == best.memberCount && candidate.totalArea > best.totalArea)) {
-        best = candidate;
-      }
-    }
-    return best;
   }
 
   public boolean canSeeHopper() {
@@ -553,6 +280,7 @@ public class VisionSubsystem extends SubsystemBase {
     if (targetRobotHeadingDeg.isEmpty()) {
       return OptionalDouble.empty();
     }
+
     Translation2d autoAlignReferenceField = getAutoAlignReferenceField(robotPose);
     autoAlignReferenceX = autoAlignReferenceField.getX();
     autoAlignReferenceY = autoAlignReferenceField.getY();
@@ -572,7 +300,9 @@ public class VisionSubsystem extends SubsystemBase {
         MathUtil.inputModulus(lineToTargetDeg - shooterFacingDeg, -180.0, 180.0);
 
     double targetRobotHeadingDeg = MathUtil.inputModulus(
-        robotPose.getRotation().getDegrees() + shooterAimErrorDeg, -180.0, 180.0);
+        robotPose.getRotation().getDegrees() + shooterAimErrorDeg,
+        -180.0,
+        180.0);
     return OptionalDouble.of(targetRobotHeadingDeg);
   }
 
@@ -591,10 +321,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     return Optional.of(tagPose.get().toPose2d().transformBy(
-        new Transform2d(
-            forwardOffsetMeters,
-            leftOffsetMeters,
-            Rotation2d.kZero)));
+        new Transform2d(forwardOffsetMeters, leftOffsetMeters, Rotation2d.kZero)));
   }
 
   public static Optional<Pose2d> getAlliancePoseFromTagOffset(
@@ -659,8 +386,7 @@ public class VisionSubsystem extends SubsystemBase {
     Translation2d autoAlignOffsetRobot = new Translation2d(
         VisionConstants.kAutoAlignCenterShiftForwardMeters,
         VisionConstants.kAutoAlignCenterShiftLeftMeters);
-    return robotPose.getTranslation().plus(
-        autoAlignOffsetRobot.rotateBy(robotPose.getRotation()));
+    return robotPose.getTranslation().plus(autoAlignOffsetRobot.rotateBy(robotPose.getRotation()));
   }
 
   private static Optional<Pose2d> getHopperCenterPose() {
@@ -687,31 +413,11 @@ public class VisionSubsystem extends SubsystemBase {
     return frontEstimated3dPose;
   }
 
+  public Pose3d getBackEstimated3dPose() {
+    return backEstimated3dPose;
+  }
+
   public String getLastEstimatorCameraName() {
     return lastEstimatorCameraName;
-  }
-
-  public boolean canSeeFuel() {
-    return fuelVisible;
-  }
-
-  public double getFuelYaw() {
-    return fuelYaw;
-  }
-
-  public double getFuelPitch() {
-    return fuelPitch;
-  }
-
-  public double getFuelArea() {
-    return fuelArea;
-  }
-
-  public int getFuelTargetCount() {
-    return fuelTargetCount;
-  }
-
-  public int getFuelSelectedClusterCount() {
-    return fuelSelectedClusterCount;
   }
 }

@@ -140,9 +140,6 @@ public final class Constants {
         new TrapezoidProfile.Constraints(
             kMaxAngularSpeedRadiansPerSecond,
             kMaxAngularSpeedRadiansPerSecondSquared);
-
-    public static final boolean kUseFuelObjectAuto = false;
-    public static final double kFuelAutoTimeoutSeconds = 4.0;
   }
 
   public static final class NeoMotorConstants {
@@ -243,37 +240,36 @@ public final class Constants {
     public static final String kLeftCameraName = "LeftSideCamera";
     public static final String kRightCameraName = "RightSideCamera";
     public static final String kFrontSideCameraName = "FrontSideCamera";
-    public static final String kFrontFuelCameraName = "FrontFuelCamera";
-    public static final String kFuelCameraName = kFrontFuelCameraName;
+    public static final String kBackCameraName = "BackSideCamera";
 
     // Camera mount poses in robot frame
-    public static final double kLeftCameraOffsetX = 0.165;
-    public static final double kLeftCameraOffsetY = 0.368;
-    public static final double kLeftCameraOffsetZ = 0.711;
+    public static final double kLeftCameraOffsetX = 0.159;
+    public static final double kLeftCameraOffsetY = 0.375;
+    public static final double kLeftCameraOffsetZ = 0.7112;
     public static final double kLeftCameraRotX = 0.0;
     public static final double kLeftCameraRotY = 0.0;
     public static final double kLeftCameraRotZ = 1.5708;
 
-    public static final double kRightCameraOffsetX = 0.0;
-    public static final double kRightCameraOffsetY = -0.368;
-    public static final double kRightCameraOffsetZ = 0.711;
+    public static final double kRightCameraOffsetX = 0.001;
+    public static final double kRightCameraOffsetY = -0.375;
+    public static final double kRightCameraOffsetZ = 0.7112;
     public static final double kRightCameraRotX = 0.0;
     public static final double kRightCameraRotY = 0.0;
     public static final double kRightCameraRotZ = -1.5708;
 
-    public static final double kFrontSideCameraOffsetX = 0.305;
+    public static final double kFrontSideCameraOffsetX = 0.318;
     public static final double kFrontSideCameraOffsetY = 0.0;
-    public static final double kFrontSideCameraOffsetZ = 0.711;
+    public static final double kFrontSideCameraOffsetZ = 0.7112;
     public static final double kFrontSideCameraRotX = 0.0;
     public static final double kFrontSideCameraRotY = 0.0;
-    public static final double kFrontSideCameraRotZ = 0.0;
+    public static final double kFrontSideCameraRotZ = 0.;
 
-    public static final double kFrontFuelCameraOffsetX = 0.305;
-    public static final double kFrontFuelCameraOffsetY = 0.0;
-    public static final double kFrontFuelCameraOffsetZ = 0.305;
-    public static final double kFrontFuelCameraRotX = 0.0;
-    public static final double kFrontFuelCameraRotY = 0.0;
-    public static final double kFrontFuelCameraRotZ = 0.0;
+    public static final double kBackCameraOffsetX = -0.057;
+    public static final double kBackCameraOffsetY = -0.191;
+    public static final double kBackCameraOffsetZ = 0.635;
+    public static final double kBackCameraRotX = 0.0;
+    public static final double kBackCameraRotY = 0.0;
+    public static final double kBackCameraRotZ = 3.14159;
 
     // Vision pose filtering
     public static final double kMaxDistanceMeters = 5.5;
@@ -326,35 +322,5 @@ public final class Constants {
     public static final double kShotLeadGain = 3.0;
     public static final double kMaxShotLeadDegrees = 30.0;
 
-    // Fuel object follow
-    public static final double kFuelAimP = 0.03;
-    public static final double kFuelAimI = 0.0;
-    public static final double kFuelAimD = 0.001;
-    public static final double kFuelApproachP = 0.09;
-    public static final double kFuelTargetArea = 10.0;
-    public static final double kFuelFinishArea = 13.0;
-    public static final double kFuelMaxDriveSpeed = 0.45;
-    public static final double kFuelMaxTurnSpeed = 0.5;
-    public static final double kFuelSearchTurnSpeed = 0.22;
-    public static final double kFuelYawToleranceDegrees = 3.0;
-    public static final double kFuelClusterYawToleranceDegrees = 6.0;
-    public static final double kFuelClusterPitchToleranceDegrees = 6.0;
-
-    // Fuel heatmap / dashboard view
-    public static final int kFuelHeatmapCellsX = 36;
-    public static final int kFuelHeatmapCellsY = 18;
-    public static final String kFuelHeatmapFieldBackground = "2026RebuiltWelded";
-    public static final double kRobotLengthMeters = 0.8;
-    public static final double kRobotWidthMeters = 0.8;
-    public static final boolean kEnableFuelHeatmap = true;
-    public static final double kFuelHeatmapPublishPeriodSeconds = 1.0;
-    public static final double kFuelHeatmapDecayPerSecond = 0.35;
-    public static final int kFuelHeatmapHotspotsToDisplay = 6;
-    public static final double kFuelHeatmapMinHotspotValue = 0.2;
-
-    // Fuel range estimation from object area
-    public static final double kFuelAreaToDistanceScale = 2.2;
-    public static final double kFuelMinEstimatedDistanceMeters = 0.3;
-    public static final double kFuelMaxEstimatedDistanceMeters = 4.0;
   }
 }
