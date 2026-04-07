@@ -5,21 +5,33 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "BRToFarBall"
+            "name": "AutoZeroHood"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "RFarBallCollect"
+            "pathName": "BLToBall2"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "RFarBallToShoot"
+            "pathName": "LToRBallCollect2Far"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LToRBallCollect2Close"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "L2BallToShoot"
           }
         },
         {
@@ -35,12 +47,6 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "Tomb"
-          }
-        },
-        {
           "type": "parallel",
           "data": {
             "commands": [
@@ -53,13 +59,13 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "Tomb"
+                  "name": "Intake"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Intake"
+                  "name": "Tomb"
                 }
               },
               {
@@ -75,6 +81,6 @@
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Left",
   "choreoAuto": false
 }

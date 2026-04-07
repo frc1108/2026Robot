@@ -43,12 +43,6 @@
       "waypointRelativePos": 0.3,
       "endWaypointRelativePos": null,
       "command": null
-    },
-    {
-      "name": "StopIntake",
-      "waypointRelativePos": 0.95,
-      "endWaypointRelativePos": null,
-      "command": null
     }
   ],
   "globalConstraints": {
@@ -64,7 +58,7 @@
     "rotation": 100.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "RightSingle",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 100.0

@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.979857346647646,
-        "y": 1.6478174037089879
+        "x": 6.031611982881596,
+        "y": 1.609001426533524
       },
       "isLocked": false,
       "linkedName": null
@@ -30,12 +30,16 @@
   ],
   "rotationTargets": [
     {
+      "waypointRelativePos": 0.15,
+      "rotationDegrees": -135.0
+    },
+    {
       "waypointRelativePos": 0.3055126223596072,
-      "rotationDegrees": -45.0
+      "rotationDegrees": -135.0
     },
     {
       "waypointRelativePos": 0.7,
-      "rotationDegrees": -45.0
+      "rotationDegrees": -135.0
     }
   ],
   "constraintZones": [
@@ -53,18 +57,7 @@
       }
     }
   ],
-  "pointTowardsZones": [
-    {
-      "fieldPosition": {
-        "x": 4.625,
-        "y": 4.025
-      },
-      "rotationOffset": -92.0,
-      "minWaypointRelativePos": 0.9,
-      "maxWaypointRelativePos": 1.0,
-      "name": "Point Towards Zone"
-    }
-  ],
+  "pointTowardsZones": [],
   "eventMarkers": [
     {
       "name": "Intake",
@@ -74,7 +67,7 @@
     },
     {
       "name": "StopIntake",
-      "waypointRelativePos": 0.6,
+      "waypointRelativePos": 0.9,
       "endWaypointRelativePos": null,
       "command": null
     }
@@ -92,7 +85,7 @@
     "rotation": -63.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "RightSingle",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 100.0

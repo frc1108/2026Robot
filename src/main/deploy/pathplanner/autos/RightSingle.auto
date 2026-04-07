@@ -5,21 +5,27 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "BLToFarBall"
+            "name": "AutoZeroHood"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "LFarBallCollect"
+            "pathName": "BRToBall"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "LFarBallToShoot"
+            "pathName": "RToLBallCollect"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RBallToShoot"
           }
         },
         {
@@ -32,12 +38,6 @@
           "type": "wait",
           "data": {
             "waitTime": 0.5
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Tomb"
           }
         },
         {
@@ -65,16 +65,46 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 15.0
+                  "waitTime": 7.0
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopTomb"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RShootToBallCollect"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RToLBallCollect"
           }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Right",
   "choreoAuto": false
 }

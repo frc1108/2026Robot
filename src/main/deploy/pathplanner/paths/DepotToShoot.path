@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.6,
-        "y": 4.05
+        "x": 0.5,
+        "y": 7.0
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.478041131110718,
-        "y": 3.5327727805919173
+        "x": 1.8136091298145502,
+        "y": 7.0820542082738935
       },
       "isLocked": false,
       "linkedName": null
@@ -20,15 +20,20 @@
         "y": 3.9
       },
       "prevControl": {
-        "x": 2.7373319389688593,
-        "y": 4.066502388764004
+        "x": 1.710099857346647,
+        "y": 5.542353780313838
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 0.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -45,10 +50,10 @@
     "rotation": -90.0
   },
   "reversed": false,
-  "folder": "MiddleShoot",
+  "folder": "MiddleDepot",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 90.0
   },
   "useDefaultConstraints": true
 }

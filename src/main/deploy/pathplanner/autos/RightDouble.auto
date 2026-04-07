@@ -13,7 +13,25 @@
         {
           "type": "path",
           "data": {
-            "pathName": "MiddleShoot"
+            "pathName": "BRToBall2"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RToLBallCollect2Far"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RToLBallCollect2Close"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "R2BallToShoot"
           }
         },
         {
@@ -29,25 +47,19 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "Tomb"
-          }
-        },
-        {
           "type": "parallel",
           "data": {
             "commands": [
               {
                 "type": "named",
                 "data": {
-                  "name": "Shoot"
+                  "name": "Intake"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "Intake"
+                  "name": "Shoot"
                 }
               },
               {
@@ -59,34 +71,16 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 5.0
+                  "waitTime": 15.0
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopIntake"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopShoot"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopTomb"
           }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Right",
   "choreoAuto": false
 }

@@ -13,19 +13,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "BLToBall"
+            "pathName": "BRToFarBall"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "LToRBallCollect"
+            "pathName": "RFarBallCollect"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "LBallToShoot"
+            "pathName": "RFarBallToShoot"
           }
         },
         {
@@ -71,46 +71,16 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 7.0
+                  "waitTime": 15.0
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopIntake"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopShoot"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopTomb"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "LShootToBallCollect"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "LToRBallCollect"
           }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Right",
   "choreoAuto": false
 }
