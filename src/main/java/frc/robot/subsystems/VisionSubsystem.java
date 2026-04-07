@@ -184,7 +184,8 @@ public class VisionSubsystem extends SubsystemBase {
       Optional<EstimatedRobotPose> poseResult = est.update(result);
       if (poseResult.isPresent()) {
         EstimatedRobotPose estimatedPose = poseResult.get();
-        estimated3dPose = estimatedPose.estimatedPose;
+        Pose2d estimatedPose2d = estimatedPose.estimatedPose.toPose2d();
+        Pose2d currentDrivePose = drive.getPose();
 
         double minDistanceToTag = Double.POSITIVE_INFINITY;
         for (PhotonTrackedTarget target : result.targets) {
@@ -193,13 +194,29 @@ public class VisionSubsystem extends SubsystemBase {
             continue;
           }
           double distanceToTag =
-              PhotonUtils.getDistanceToPose(estimatedPose.estimatedPose.toPose2d(), tagPose.get().toPose2d());
+              PhotonUtils.getDistanceToPose(estimatedPose2d, tagPose.get().toPose2d());
           minDistanceToTag = Math.min(minDistanceToTag, distanceToTag);
         }
 
+        double poseJumpMeters =
+            currentDrivePose.getTranslation().getDistance(estimatedPose2d.getTranslation());
+        double poseJumpDegrees = Math.abs(MathUtil.inputModulus(
+            estimatedPose2d.getRotation().getDegrees() - currentDrivePose.getRotation().getDegrees(),
+            -180.0,
+            180.0));
+        boolean autonomousVisionOutlier =
+            DriverStation.isAutonomousEnabled()
+                && (minDistanceToTag > VisionConstants.kAutoVisionMaxDistanceMeters
+                    || poseJumpMeters > VisionConstants.kAutoVisionMaxPoseJumpMeters
+                    || poseJumpDegrees > VisionConstants.kAutoVisionMaxPoseJumpDegrees);
+        if (autonomousVisionOutlier) {
+          continue;
+        }
+
+        estimated3dPose = estimatedPose.estimatedPose;
         boolean far = minDistanceToTag > VisionConstants.kMaxDistanceMeters;
         drive.addVisionMeasurementWithStdDevs(
-            estimatedPose.estimatedPose.toPose2d(),
+            estimatedPose2d,
             estimatedPose.timestampSeconds,
             far ? VisionConstants.kVisionStdDevFarXY : VisionConstants.kVisionStdDevCloseXY,
             far ? VisionConstants.kVisionStdDevFarTheta : VisionConstants.kVisionStdDevCloseTheta);
