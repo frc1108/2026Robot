@@ -16,12 +16,12 @@
     },
     {
       "anchor": {
-        "x": 2.1,
-        "y": 2.7
+        "x": 2.2,
+        "y": 2.6
       },
       "prevControl": {
-        "x": 2.276776695296637,
-        "y": 2.523223304703363
+        "x": 2.376776695296637,
+        "y": 2.423223304703363
       },
       "nextControl": null,
       "isLocked": false,
@@ -38,17 +38,17 @@
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
-    "unlimited": false
+    "unlimited": true
   },
   "goalEndState": {
     "velocity": 0,
     "rotation": -63.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Jiggles",
   "idealStartingState": {
     "velocity": 0.0,
     "rotation": -63.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

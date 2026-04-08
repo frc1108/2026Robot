@@ -65,7 +65,80 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 15.0
+                  "waitTime": 4.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopTomb"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LShootJiggle1"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LShootJiggle2"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shoot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Tomb"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 10.0
                 }
               }
             ]

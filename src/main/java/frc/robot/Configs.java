@@ -66,7 +66,7 @@ public final class Configs {
 
         static{
         intakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(35).voltageCompensation(10);
-        vortexIntakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(45).voltageCompensation(10);
+        vortexIntakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(55).voltageCompensation(10);
     }}
 
     public static final class Feeder {

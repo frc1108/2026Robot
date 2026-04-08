@@ -278,9 +278,6 @@ public final class Constants {
     public static final double kVisionStdDevCloseTheta = 0.8;
     public static final double kVisionStdDevFarXY = 3.0;
     public static final double kVisionStdDevFarTheta = 6.0;
-    public static final double kAutoVisionMaxDistanceMeters = 4.0;
-    public static final double kAutoVisionMaxPoseJumpMeters = 0.75;
-    public static final double kAutoVisionMaxPoseJumpDegrees = 15.0;
 
     // Main hopper / hub target definition
     public static final int kBlueHopperTagId = 26;

@@ -70,6 +70,79 @@
               }
             ]
           }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopShoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopTomb"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RShootJiggle1"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "RShootJiggle2"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shoot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Tomb"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Intake"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 10.0
+                }
+              }
+            ]
+          }
         }
       ]
     }

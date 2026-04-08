@@ -149,8 +149,6 @@ public class VisionSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Vision/RobotPoseDeg", drive.getPose().getRotation().getDegrees());
 
     Pose2d fallbackPose = drive.getPose();
-    Pose2d robotPoseForFiltering =
-        lastEstimatorCameraName.isEmpty() ? fallbackPose : estimated3dPose.toPose2d();
 
     PhotonTrackedTarget bestHopperTarget = null;
     double bestHopperAmbiguity = Double.MAX_VALUE;
@@ -185,7 +183,6 @@ public class VisionSubsystem extends SubsystemBase {
       if (poseResult.isPresent()) {
         EstimatedRobotPose estimatedPose = poseResult.get();
         Pose2d estimatedPose2d = estimatedPose.estimatedPose.toPose2d();
-        Pose2d currentDrivePose = drive.getPose();
 
         double minDistanceToTag = Double.POSITIVE_INFINITY;
         for (PhotonTrackedTarget target : result.targets) {
@@ -196,21 +193,6 @@ public class VisionSubsystem extends SubsystemBase {
           double distanceToTag =
               PhotonUtils.getDistanceToPose(estimatedPose2d, tagPose.get().toPose2d());
           minDistanceToTag = Math.min(minDistanceToTag, distanceToTag);
-        }
-
-        double poseJumpMeters =
-            currentDrivePose.getTranslation().getDistance(estimatedPose2d.getTranslation());
-        double poseJumpDegrees = Math.abs(MathUtil.inputModulus(
-            estimatedPose2d.getRotation().getDegrees() - currentDrivePose.getRotation().getDegrees(),
-            -180.0,
-            180.0));
-        boolean autonomousVisionOutlier =
-            DriverStation.isAutonomousEnabled()
-                && (minDistanceToTag > VisionConstants.kAutoVisionMaxDistanceMeters
-                    || poseJumpMeters > VisionConstants.kAutoVisionMaxPoseJumpMeters
-                    || poseJumpDegrees > VisionConstants.kAutoVisionMaxPoseJumpDegrees);
-        if (autonomousVisionOutlier) {
-          continue;
         }
 
         estimated3dPose = estimatedPose.estimatedPose;

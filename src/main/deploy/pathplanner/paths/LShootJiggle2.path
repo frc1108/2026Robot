@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.5,
-        "y": 5.8
+        "x": 2.4,
+        "y": 5.7
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.3232233047033635,
-        "y": 5.623223304703363
+        "x": 2.223223304703363,
+        "y": 5.523223304703364
       },
       "isLocked": false,
       "linkedName": null
@@ -20,7 +20,7 @@
         "y": 5.6
       },
       "prevControl": {
-        "x": 2.4767766952966364,
+        "x": 2.476776695296637,
         "y": 5.776776695296636
       },
       "nextControl": null,
@@ -38,14 +38,14 @@
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
-    "unlimited": false
+    "unlimited": true
   },
   "goalEndState": {
     "velocity": 0,
     "rotation": -133.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Jiggles",
   "idealStartingState": {
     "velocity": 0.0,
     "rotation": -133.0
