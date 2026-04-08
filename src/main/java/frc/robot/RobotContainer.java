@@ -42,7 +42,7 @@ import java.util.function.DoubleSupplier;
 
 @Logged
 public class RobotContainer {
-  private static final String kDefaultAutoName = "BumpR";
+  private static final String kDefaultAutoName = "Right Single";
   private static final double kDefaultHopperDistanceMeters = 2.5;
 
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
