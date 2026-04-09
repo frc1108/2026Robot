@@ -37,6 +37,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   private final List<PhotonCamera> m_photonCameras = new ArrayList<>();
   private final List<PhotonPoseEstimator> m_poseEstimators = new ArrayList<>();
+  private final List<Transform3d> m_cameraOffsets = new ArrayList<>();
   private final AprilTagFieldLayout m_fieldLayout;
   private final BiConsumer<Pose2d, Double> m_consumer;
   @NotLogged private final DriveSubsystem drive;
@@ -139,6 +140,7 @@ public class VisionSubsystem extends SubsystemBase {
         m_fieldLayout,
         PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
         cameraOffset));
+    m_cameraOffsets.add(cameraOffset);
   }
 
   @Override
@@ -212,6 +214,58 @@ public class VisionSubsystem extends SubsystemBase {
           frontEstimated3dPose = estimatedPose.estimatedPose;
         } else if (i == 3) {
           backEstimated3dPose = estimatedPose.estimatedPose;
+        }
+      } else {
+        // Fallback: even if the PhotonPoseEstimator couldn't produce a pose (often when
+        // targets are far or ambiguity is high), construct a conservative camera-derived
+        // robot pose from the best tracked target and still feed it to the pose estimator
+        // with reduced confidence. This ensures cameras are always considered, but with
+        // lower weight when distant or uncertain.
+        for (PhotonTrackedTarget target : result.targets) {
+          var tagPose = m_fieldLayout.getTagPose(target.getFiducialId());
+          if (tagPose.isEmpty()) {
+            continue;
+          }
+
+          // bestCameraToTarget maps camera -> target. Invert to get target -> camera,
+          // then transform the known tag pose (field frame) to get the camera pose in the
+          // field frame.
+          Transform3d cameraToTarget = target.getBestCameraToTarget();
+          Transform3d targetToCamera = cameraToTarget.inverse();
+          Pose3d cameraPoseField = tagPose.get().transformBy(targetToCamera);
+
+          // Convert camera pose to robot pose using the stored camera offset (robot -> camera).
+          // Since cameraOffset is robot->camera, invert it to apply camera->robot.
+          Transform3d cameraOffset = m_cameraOffsets.get(i);
+          Pose3d robotPoseField = cameraPoseField.transformBy(cameraOffset.inverse());
+
+          Pose2d estimatedPose2d = robotPoseField.toPose2d();
+
+          double distanceToTag = PhotonUtils.getDistanceToPose(
+              estimatedPose2d, tagPose.get().toPose2d());
+          boolean far = distanceToTag > VisionConstants.kMaxDistanceMeters;
+
+          // Reduce confidence for fallback (estimator couldn't solve): increase stddevs a bit
+          double xyStd = (far ? VisionConstants.kVisionStdDevFarXY : VisionConstants.kVisionStdDevCloseXY) * 1.5;
+          double thetaStd = (far ? VisionConstants.kVisionStdDevFarTheta : VisionConstants.kVisionStdDevCloseTheta) * 1.5;
+
+          // Use the pipeline/result timestamp if available; otherwise fall back to current time.
+          double timestamp = result.getTimestampSeconds();
+          drive.addVisionMeasurementWithStdDevs(estimatedPose2d, timestamp, xyStd, thetaStd);
+
+          // Keep the first usable fallback and break (we don't want to spam multiple similar measurements)
+          lastEstimatorCameraName = cam.getName() + " (fallback)";
+          if (i == 0) {
+            leftEstimated3dPose = robotPoseField;
+          } else if (i == 1) {
+            rightEstimated3dPose = robotPoseField;
+          } else if (i == 2) {
+            frontEstimated3dPose = robotPoseField;
+          } else if (i == 3) {
+            backEstimated3dPose = robotPoseField;
+          }
+          // we used one target for fallback pose - stop here
+          break;
         }
       }
 
