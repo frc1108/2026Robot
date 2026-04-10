@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -166,6 +167,12 @@ public class DriveSubsystem extends SubsystemBase {
     } else {
       m_gyro.setYaw(0.0);
     }
+  }
+
+  public void flipHeading() {
+    m_gyro.setPose(m_gyro.getRotation3d().rotateBy(new Rotation3d(Rotation2d.k180deg)), 0);
+    //m_gyro.setPose(new Rotation3d(),0);
+    //m_gyro.reset();
   }
 
   public void setYawZero() {
