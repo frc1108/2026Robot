@@ -273,7 +273,7 @@ public final class Constants {
 
     // Vision pose filtering
     public static final double kMaxDistanceMeters = 5.5;
-    public static final double kMaxAmbiguity = 0.2;
+    public static final double kMaxAmbiguity = 0.35;
     public static final double kVisionStdDevCloseXY = 0.5;
     public static final double kVisionStdDevCloseTheta = 0.8;
     public static final double kVisionStdDevFarXY = 3.0;
