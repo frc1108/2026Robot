@@ -244,14 +244,14 @@ public final class Constants {
 
     // Camera mount poses in robot frame
     public static final double kLeftCameraOffsetX = 0.159;
-    public static final double kLeftCameraOffsetY = 0.375;
+    public static final double kLeftCameraOffsetY = 0.374;
     public static final double kLeftCameraOffsetZ = 0.7112;
     public static final double kLeftCameraRotX = 0.0;
     public static final double kLeftCameraRotY = 0.0;
     public static final double kLeftCameraRotZ = 1.5708;
 
     public static final double kRightCameraOffsetX = 0.001;
-    public static final double kRightCameraOffsetY = -0.375;
+    public static final double kRightCameraOffsetY = -0.374;
     public static final double kRightCameraOffsetZ = 0.7112;
     public static final double kRightCameraRotX = 0.0;
     public static final double kRightCameraRotY = 0.0;
@@ -272,7 +272,7 @@ public final class Constants {
     public static final double kBackCameraRotZ = 3.1415;
 
     // Vision pose filtering
-    public static final double kMaxDistanceMeters = 5.5;
+    public static final double kMaxDistanceMeters = 100;
     public static final double kMaxAmbiguity = 0.35;
     public static final double kVisionStdDevCloseXY = 0.5;
     public static final double kVisionStdDevCloseTheta = 0.8;

@@ -282,8 +282,8 @@ public class RobotContainer {
     m_driverController.leftTrigger().whileTrue(m_intake.intake());
     m_driverController.leftBumper().whileTrue(m_intake.slowIntake());
     m_driverController.x().whileTrue(m_tomb.reverseFeederCommand());
-    m_driverController.a().onTrue(Commands.runOnce(m_robotDrive::setYaw180, m_robotDrive));
-    m_driverController.povUp().onTrue(Commands.runOnce(m_robotDrive::flipHeading180, m_robotDrive));
+    m_driverController.a().onTrue(Commands.runOnce(m_robotDrive::setYawZero, m_robotDrive));
+    m_driverController.povUp().onTrue(Commands.runOnce(m_robotDrive::setYaw180, m_robotDrive));
     m_driverController.povLeft().whileTrue(leftSideShotCommand);
     m_driverController.povDown().whileTrue(m_intake.reverseIntake());
     m_driverController.povDown().whileTrue(m_tomb.reverseTomb());
