@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.682268188302425,
-        "y": 5.632924393723252
+        "x": 5.0741512125534936,
+        "y": 5.6070470756062765
       },
       "isLocked": false,
       "linkedName": null
@@ -44,7 +44,7 @@
       "minWaypointRelativePos": 0.2956015523932689,
       "maxWaypointRelativePos": 0.5931435963777467,
       "constraints": {
-        "maxVelocity": 2.0,
+        "maxVelocity": 2.5,
         "maxAcceleration": 2.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -83,7 +83,7 @@
   "reversed": false,
   "folder": "LeftDouble",
   "idealStartingState": {
-    "velocity": 1.5,
+    "velocity": 2.0,
     "rotation": 135.0
   },
   "useDefaultConstraints": true
