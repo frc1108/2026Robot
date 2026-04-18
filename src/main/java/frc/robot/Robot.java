@@ -8,6 +8,7 @@ import com.reduxrobotics.canand.CanandEventLoop;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -23,6 +24,8 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
+    private boolean m_alliancePresent, m_driveStationConnected = false;
+
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -37,7 +40,23 @@ public class Robot extends TimedRobot {
 
     DataLogManager.start();
     Epilogue.bind(this);
+  }
 
+  @Override
+  public void driverStationConnected() {
+    m_driveStationConnected = true;
+    setAllianceColor();
+  }
+
+  private void setAllianceColor() {
+    var alliance = DriverStation.getAlliance();
+    
+    if (alliance.isPresent()) {
+      m_robotContainer.configureWithAlliance(alliance.get());
+      m_alliancePresent = true;
+    } else {
+      System.out.print("No alliance present");
+    }
   }
 
   /**
@@ -54,6 +73,9 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+     if (m_driveStationConnected && !m_alliancePresent) {
+      setAllianceColor();
+    }
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
