@@ -264,6 +264,15 @@ public final class Constants {
     public static final double kFrontSideCameraRotY = 0.0;
     public static final double kFrontSideCameraRotZ = 0.0;
 
+    //(Left)
+    //public static final double kBackCameraOffsetX = 0.0889;
+    //public static final double kBackCameraOffsetY = 0.374;
+    //public static final double kBackCameraOffsetZ = 0.7112;
+    //public static final double kBackCameraRotX = 0.0;
+    //public static final double kBackCameraRotY = 0.0;
+    //public static final double kBackCameraRotZ = 1.5708;
+
+    //(Back)
     public static final double kBackCameraOffsetX = -0.057;
     public static final double kBackCameraOffsetY = 0.191;
     public static final double kBackCameraOffsetZ = 0.635;
