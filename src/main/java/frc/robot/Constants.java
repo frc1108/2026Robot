@@ -120,7 +120,7 @@ public final class Constants {
 
     // Reverse controls
     public static final double reverseFrontTombSpeed = 0.95;
-    public static final double reverseBackTombSpeed = -0.95;
+    public static final double reverseBackTombSpeed = -0.95;  
     public static final double reverseFeederTombVelocityRpm = 5000.0;
   }
 
@@ -159,7 +159,7 @@ public final class Constants {
 
     // Basic shooter targets
     public static final double kShooterFullRpm = 4200.0;
-    public static final double kShooterSlowRpm = 2800.0;
+    public static final double kShooterSlowRpm = 1200.0;
     public static final double kShooterMaxRpm = 6000.0;
 
     // Shooter velocity loop
