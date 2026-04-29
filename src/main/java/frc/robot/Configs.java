@@ -66,14 +66,14 @@ public final class Configs {
 
         static{
         intakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(35).voltageCompensation(10);
-        vortexIntakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(55).voltageCompensation(10);
+        vortexIntakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(80).voltageCompensation(10);
     }}
 
     public static final class Feeder {
                 public static final SparkFlexConfig feederConfig = new SparkFlexConfig();
 
         static{
-        feederConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(40).voltageCompensation(10);
+        feederConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(80).voltageCompensation(10);
     }}
 
         public static final class Shooter {
