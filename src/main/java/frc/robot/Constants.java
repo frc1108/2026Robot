@@ -8,6 +8,13 @@ import edu.wpi.first.math.util.Units;
 public final class Constants {
   private Constants() {}
 
+  public static final class RoboRioConstants {
+    private RoboRioConstants() {}
+
+    /** RoboRIO brownout threshold (V). */
+    public static final double kBrownoutVoltageVolts = 6.3;
+  }
+
   public static final class DriveConstants {
     private DriveConstants() {}
 
