@@ -1,0 +1,31 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "MiddleShoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "StToDpSH"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "DpLong"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Middle",
+  "choreoAuto": false
+}

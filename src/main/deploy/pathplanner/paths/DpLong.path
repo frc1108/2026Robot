@@ -4,24 +4,24 @@
     {
       "anchor": {
         "x": 0.5,
-        "y": 7.25
+        "y": 5.0
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.733878817403048,
-        "y": 7.25
+        "x": 0.48545625767630296,
+        "y": 5.963011567154884
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.5,
-        "y": 6.5
+        "x": 0.5,
+        "y": 7.5
       },
       "prevControl": {
-        "x": 1.6064492590824702,
-        "y": 6.726204675550249
+        "x": 0.5040514505228462,
+        "y": 7.749967169341618
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,10 +42,10 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -133.0
+    "rotation": 90.0
   },
   "reversed": false,
-  "folder": "MiddleDepot",
+  "folder": "JMStToDp",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 90.0

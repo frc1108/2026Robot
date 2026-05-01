@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.5,
-        "y": 7.25
+        "x": 1.7,
+        "y": 3.9
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.733878817403048,
-        "y": 7.25
+        "x": 1.6971611982881591,
+        "y": 5.270641940085593
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.5,
-        "y": 6.5
+        "x": 0.5,
+        "y": 7.0
       },
       "prevControl": {
-        "x": 1.6064492590824702,
-        "y": 6.726204675550249
+        "x": 2.2147075606276743,
+        "y": 7.004422253922967
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -133.0
+    "rotation": -90.0
   },
   "reversed": false,
-  "folder": "MiddleDepot",
+  "folder": "JMStToDp",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 90.0
+    "rotation": -90.0
   },
   "useDefaultConstraints": true
 }
