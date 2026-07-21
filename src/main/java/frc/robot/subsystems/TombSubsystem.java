@@ -21,9 +21,10 @@ import frc.robot.Configs;
 import frc.robot.Constants.TombConstants;
 
 public class TombSubsystem extends SubsystemBase {
-  final SparkMax m_frontTomb = new SparkMax(TombConstants.frontTombCanId, MotorType.kBrushless);
-  final SparkFlex m_backTomb = new SparkFlex(TombConstants.backTombCanId, MotorType.kBrushless);
-  final SparkFlex m_feederTomb = new SparkFlex(TombConstants.feederTombCanId, MotorType.kBrushless);
+  final private SparkMax m_frontTomb = new SparkMax(TombConstants.frontTombCanId, MotorType.kBrushless);
+  final private SparkFlex m_backTomb = new SparkFlex(TombConstants.backTombCanId, MotorType.kBrushless);
+  final private SparkFlex m_feederTomb = new SparkFlex(TombConstants.feederTombCanId, MotorType.kBrushless);
+
   private SparkClosedLoopController m_feederClosedLoopController;
   private RelativeEncoder m_feederEncoder;
   // By default use open-loop percent output for the feeder (maps RPM -> percent)
@@ -40,38 +41,29 @@ public class TombSubsystem extends SubsystemBase {
         Configs.Feeder.feederConfig,
         ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
-  m_backTomb.configure(
-    Configs.Intake.vortexIntakeConfig,
-    ResetMode.kResetSafeParameters,
-    PersistMode.kPersistParameters);
-  // Initialize closed-loop controller for the feeder motor
-  m_feederClosedLoopController = m_feederTomb.getClosedLoopController();
-  m_feederEncoder = m_feederTomb.getEncoder();
-  // Defensive: ensure IdleMode is Brake on each tomb controller
-  m_frontTomb.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
-    PersistMode.kPersistParameters);
-  m_backTomb.configure(new com.revrobotics.spark.config.SparkFlexConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
-    PersistMode.kPersistParameters);
+    m_backTomb.configure(
+        Configs.Intake.vortexIntakeConfig,
+        ResetMode.kResetSafeParameters,
+        PersistMode.kPersistParameters);
+    
+    // Initialize closed-loop controller for the feeder motor
+    m_feederClosedLoopController = m_feederTomb.getClosedLoopController();
+    m_feederEncoder = m_feederTomb.getEncoder();
   }
 
   @Override
   public void periodic() {
-    // Intentionally quiet: no periodic console logging.
+    // This method will be called once per scheduler run
   }
 
   private void setFrontTombPower(double power) {
-    
     m_frontTomb.set(power);
   }
+
   private void setBackTombPower(double power) {
     m_backTomb.set(power);
-
   }
-    private void setFeederTombPower(double power) {
-    m_feederTomb.set(power);
-
-  }
-
+  
   /** Set feeder target velocity in RPM using the SPARK MAX closed-loop controller. */
   public void setFeederVelocityRpm(double rpm) {
     if (m_useFeederClosedLoop && m_feederClosedLoopController != null) {
