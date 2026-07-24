@@ -1,10 +1,12 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.LightsConstants;
 
+@Logged
 public class LightsSubsystem extends SubsystemBase {
   private final Spark m_blinkin = new Spark(LightsConstants.kBlinkinPwmPort);
   private int m_modeIndex = 0;

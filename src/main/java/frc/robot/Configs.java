@@ -22,78 +22,78 @@ public final class Configs {
             double drivingVelocityFeedForward = nominalVoltage / ModuleConstants.kDriveWheelFreeSpeedRps;
 
             drivingConfig
-                    .idleMode(IdleMode.kBrake)
-                    .smartCurrentLimit(50);
+                .idleMode(IdleMode.kBrake)
+                .smartCurrentLimit(50);
             drivingConfig.encoder
-                    .positionConversionFactor(drivingFactor) // meters
-                    .velocityConversionFactor(drivingFactor / 60.0); // meters per second
+                .positionConversionFactor(drivingFactor) // meters
+                .velocityConversionFactor(drivingFactor / 60.0); // meters per second
             drivingConfig.closedLoop
-                    .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                    // These are example gains you may need to them for your own robot!
-                    .pid(0.04, 0, 0)
-                    .outputRange(-1, 1)
-                    .feedForward.kV(drivingVelocityFeedForward);
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+                // These are example gains you may need to them for your own robot!
+                .pid(0.04, 0, 0)
+                .outputRange(-1, 1)
+                .feedForward.kV(drivingVelocityFeedForward);
 
             turningConfig
-                    .idleMode(IdleMode.kBrake)
-                    .smartCurrentLimit(20);
+                .idleMode(IdleMode.kBrake)
+                .smartCurrentLimit(20);
 
             turningConfig.absoluteEncoder
-                    // Invert the turning encoder, since the output shaft rotates in the opposite
-                    // direction of the steering motor in the MAXSwerve Module.
-                    .inverted(true)
-                    .positionConversionFactor(turningFactor) // radians
-                    .velocityConversionFactor(turningFactor / 60.0) // radians per second
-                    // This applies to REV Through Bore Encoder V2 (use REV_ThroughBoreEncoder for V1):
-                    .apply(AbsoluteEncoderConfig.Presets.REV_ThroughBoreEncoderV2);
-
+                // Invert the turning encoder, since the output shaft rotates in the opposite
+                // direction of the steering motor in the MAXSwerve Module.
+                .inverted(true)
+                .positionConversionFactor(turningFactor) // radians
+                .velocityConversionFactor(turningFactor / 60.0) // radians per second
+                // This applies to REV Through Bore Encoder V2 (use REV_ThroughBoreEncoder for V1):
+                .apply(AbsoluteEncoderConfig.Presets.REV_ThroughBoreEncoderV2);
             turningConfig.closedLoop
-                    .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-                    // These are example gains you may need to them for your own robot!
-                    .pid(1, 0, 0)
-                    .outputRange(-1, 1)
-                    // Enable PID wrap around for the turning motor. This will allow the PID
-                    // controller to go through 0 to get to the setpoint i.e. going from 350 degrees
-                    // to 10 degrees will go through 0 rather than the other direction which is a
-                    // longer route.
-                    .positionWrappingEnabled(true)
-                    .positionWrappingInputRange(0, turningFactor);
+                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+                .pid(1, 0, 0)
+                .outputRange(-1, 1)
+                .positionWrappingEnabled(true)
+                .positionWrappingInputRange(0, turningFactor);
         }
     }
     public static final class Intake {
-                public static final SparkMaxConfig intakeConfig = new SparkMaxConfig();
-                public static final SparkFlexConfig vortexIntakeConfig = new SparkFlexConfig();
+        public static final SparkMaxConfig intakeConfig = new SparkMaxConfig();
+        public static final SparkFlexConfig vortexIntakeConfig = new SparkFlexConfig();
 
         static{
-        intakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(35).voltageCompensation(10);
-        vortexIntakeConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(80).voltageCompensation(10);
-    }}
-
-    public static final class Feeder {
-                public static final SparkFlexConfig feederConfig = new SparkFlexConfig();
-
-        static{
-        feederConfig.idleMode(IdleMode.kCoast).smartCurrentLimit(80).voltageCompensation(10);
-    }}
-
-        public static final class Shooter {
-                public static final SparkMaxConfig hoodConfig = new SparkMaxConfig();
-
-                static {
-                        // Configure hood encoder conversions (rotations -> degrees)
-                        hoodConfig.encoder
-                                .positionConversionFactor(360.0 / Constants.ShooterConstants.kHoodGearRatio)
-                                .velocityConversionFactor(360.0 / (Constants.ShooterConstants.kHoodGearRatio * 60.0));
-
-                        // Closed-loop PID for hood
-                        hoodConfig.closedLoop
-                                .pid(Constants.ShooterConstants.kHoodP, Constants.ShooterConstants.kHoodI, Constants.ShooterConstants.kHoodD)
-                                .outputRange(-Constants.ShooterConstants.kHoodMaxClosedLoopOutput,
-                                        Constants.ShooterConstants.kHoodMaxClosedLoopOutput);
-
-                        // Use brake idle for hood motor
-                        hoodConfig.idleMode(IdleMode.kBrake).smartCurrentLimit(20).voltageCompensation(10);
-                }
+            intakeConfig
+                .idleMode(IdleMode.kBrake)
+                .smartCurrentLimit(35)
+                .voltageCompensation(10);
+            vortexIntakeConfig
+                .idleMode(IdleMode.kBrake)
+                .smartCurrentLimit(80)
+                .voltageCompensation(10);
         }
+    }
+    public static final class Feeder {
+        public static final SparkFlexConfig feederConfig = new SparkFlexConfig();
 
+        static{
+            feederConfig
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(80)
+                .voltageCompensation(10);
+        }
+    }
+    public static final class Shooter {
+        public static final SparkMaxConfig hoodConfig = new SparkMaxConfig();
+
+        static {
+            hoodConfig
+                .idleMode(IdleMode.kBrake)
+                .smartCurrentLimit(20)
+                .voltageCompensation(10);
+            hoodConfig.encoder
+                .positionConversionFactor(360.0 / Constants.ShooterConstants.kHoodGearRatio)
+                .velocityConversionFactor(360.0 / (Constants.ShooterConstants.kHoodGearRatio * 60.0));
+            hoodConfig.closedLoop
+                .pid(Constants.ShooterConstants.kHoodP, Constants.ShooterConstants.kHoodI, Constants.ShooterConstants.kHoodD)
+                .outputRange(-Constants.ShooterConstants.kHoodMaxClosedLoopOutput,
+                              Constants.ShooterConstants.kHoodMaxClosedLoopOutput);
+        }
+    }
 }

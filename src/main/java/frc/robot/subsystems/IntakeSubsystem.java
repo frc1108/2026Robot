@@ -14,12 +14,15 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Configs;
 import frc.robot.Constants.IntakeConstants;
 
+@Logged
 public class IntakeSubsystem extends SubsystemBase {
   final SparkMax m_frontIntake = new SparkMax(IntakeConstants.frontIntakecanid, MotorType.kBrushless);
   final SparkMax m_backIntake = new SparkMax(IntakeConstants.backIntakecanid, MotorType.kBrushless);
@@ -43,11 +46,6 @@ public class IntakeSubsystem extends SubsystemBase {
         Configs.Intake.vortexIntakeConfig,
         ResetMode.kResetSafeParameters,
         PersistMode.kPersistParameters);
-      // Defensive: explicitly ensure IdleMode is Brake on each controller
-      m_frontIntake.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
-          PersistMode.kPersistParameters);
-      m_backIntake.configure(new SparkMaxConfig().idleMode(IdleMode.kBrake), ResetMode.kResetSafeParameters,
-          PersistMode.kPersistParameters);
     // Initialize closed-loop controllers and encoders for intake motors
     m_frontClosedLoopController = m_frontIntake.getClosedLoopController();
     m_backClosedLoopController = m_backIntake.getClosedLoopController();
